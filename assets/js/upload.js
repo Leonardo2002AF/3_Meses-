@@ -40,23 +40,39 @@ function closeUploadModal() {
 
 function resetUploadModal() {
   uploadState = { file: null, type: null, preview: null, category: UPLOAD_CATEGORIES[0].id };
+  
   const dropzone = document.getElementById('um-dropzone');
   if (dropzone) {
     dropzone.innerHTML = `
       <div class="um-drop-icon">📁</div>
       <p class="um-drop-label">Toca para elegir una foto o video</p>
       <p class="um-drop-sub">JPG, PNG, MP4, MOV · Máx. 100 MB</p>
-      <input type="file" id="um-file-input" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,video/mp4,video/mov,video/quicktime"
-             style="display:none" onchange="onFileSelected(event)"/>
-      <button class="btn btn-outline um-choose-btn" onclick="document.getElementById('um-file-input').click()">
+      <button class="btn btn-outline um-choose-btn" onclick="triggerFileInput()">
         📷 Elegir archivo
       </button>
     `;
   }
+
+  // Input FIJO fuera del dropzone para que no se destruya
+  let input = document.getElementById('um-file-input-fixed');
+  if (!input) {
+    input = document.createElement('input');
+    input.type = 'file';
+    input.id = 'um-file-input-fixed';
+    input.accept = 'image/jpeg,image/jpg,image/png,image/gif,image/webp,video/mp4,video/mov,video/quicktime';
+    input.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;width:1px;height:1px;';
+    input.addEventListener('change', onFileSelected);
+    document.body.appendChild(input);
+  } else {
+    // Resetear el input para que iOS permita seleccionar el mismo archivo
+    input.value = '';
+  }
+
   const titleInput = document.getElementById('um-title');
   if (titleInput) titleInput.value = '';
   const descInput = document.getElementById('um-desc');
-  if (descInput)  descInput.value  = '';
+  if (descInput) descInput.value = '';
+
   setUploadStep(1);
 }
 
@@ -120,24 +136,23 @@ function showPreview(type, src, name) {
       <video src="${src}" controls class="um-preview-media"></video>
       <p class="um-preview-name">🎬 ${name}</p>
       <button class="btn btn-outline um-change-btn" onclick="triggerFileInput()">🔄 Cambiar archivo</button>
-      <input type="file" id="um-file-input" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,video/mp4,video/mov,video/quicktime" 
-             style="display:none" onchange="onFileSelected(event)"/>
     `;
   } else {
     dropzone.innerHTML = `
       <img src="${src}" alt="preview" class="um-preview-media"/>
       <p class="um-preview-name">🖼️ ${name}</p>
       <button class="btn btn-outline um-change-btn" onclick="triggerFileInput()">🔄 Cambiar archivo</button>
-      <input type="file" id="um-file-input" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,video/mp4,video/mov,video/quicktime"
-             style="display:none" onchange="onFileSelected(event)"/>
     `;
   }
 }
 
 function triggerFileInput() {
-  document.getElementById('um-file-input').click();
+  const input = document.getElementById('um-file-input-fixed');
+  if (input) {
+    input.value = ''; // reset para iOS
+    input.click();
+  }
 }
-
 /* ════════════════════
    SUBIR A CLOUDINARY
    ✅ El contexto se manda en la misma
