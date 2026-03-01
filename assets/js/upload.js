@@ -57,7 +57,6 @@ function resetUploadModal() {
   if (titleInput) titleInput.value = '';
   const descInput = document.getElementById('um-desc');
   if (descInput)  descInput.value  = '';
-
   setUploadStep(1);
 }
 
@@ -124,6 +123,8 @@ function triggerFileInput() {
 
 /* ════════════════════
    SUBIR A CLOUDINARY
+   ✅ El contexto se manda en la misma
+   petición — no requiere firma
 ════════════════════ */
 async function startUpload() {
   const title    = document.getElementById('um-title').value.trim();
@@ -131,29 +132,44 @@ async function startUpload() {
   const emoji    = document.getElementById('um-emoji').value || '📸';
   const category = document.getElementById('um-category').value;
 
-  if (!uploadState.file) { showUploadError('Primero elige un archivo.');          return; }
+  if (!uploadState.file) { showUploadError('Primero elige un archivo.');           return; }
   if (!title)             { showUploadError('Escribe un título para el recuerdo.'); return; }
 
   setUploadStep(3);
   showProgress(0);
 
+  const gradient = randomGradient();
+
+  // Contexto que viaja junto al archivo (permitido en unsigned)
+  const contextStr = [
+    `title=${encodeURIComponent(title)}`,
+    `sub=${encodeURIComponent(desc || title)}`,
+    `desc=${encodeURIComponent(desc || 'Un recuerdo especial: ' + title)}`,
+    `emoji=${encodeURIComponent(emoji)}`,
+    `category=${category}`,
+    `gradient=${encodeURIComponent(gradient)}`,
+    `type=${uploadState.type}`,
+  ].join('|');
+
   try {
-    const url = await uploadToCloudinary(uploadState.file, (pct) => showProgress(pct));
+    const url = await uploadToCloudinary(
+      uploadState.file,
+      contextStr,
+      (pct) => showProgress(pct)
+    );
 
     const card = {
       title,
       emoji,
       sub:      desc || title,
       desc:     desc || `Un recuerdo especial: ${title}`,
-      gradient: randomGradient(),
+      gradient,
       image:    uploadState.type === 'image' ? url : '',
       video:    uploadState.type === 'video' ? url : '',
     };
 
-    // ✅ CORRECCIÓN 1: extraer publicId correctamente y pasar todos los parámetros
-    const publicId = url.split('/upload/')[1].split('.')[0];
-    const resType  = uploadState.type === 'video' ? 'video' : 'image';
-    await saveCardToStorage(category, card, publicId, resType);
+    // Guardar también en localStorage como respaldo
+    saveToLocalStorage(category, card);
 
     addCardToCarousel(category, card);
     showUploadSuccess(title);
@@ -166,12 +182,17 @@ async function startUpload() {
   }
 }
 
-function uploadToCloudinary(file, onProgress) {
+/* ════════════════════
+   UPLOAD A CLOUDINARY
+   contexto incluido en FormData
+════════════════════ */
+function uploadToCloudinary(file, contextStr, onProgress) {
   return new Promise((resolve, reject) => {
     const form = new FormData();
     form.append('file',          file);
     form.append('upload_preset', CLOUDINARY_PRESET);
     form.append('folder',        'nuestros-recuerdos');
+    form.append('context',       contextStr);  // ✅ contexto en la subida
 
     const resourceType = file.type.startsWith('video/') ? 'video' : 'image';
     const endpoint = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/${resourceType}/upload`;
@@ -188,6 +209,7 @@ function uploadToCloudinary(file, onProgress) {
         const data = JSON.parse(xhr.responseText);
         resolve(data.secure_url);
       } else {
+        console.error('Cloudinary response:', xhr.responseText);
         reject(new Error(`Cloudinary error: ${xhr.status}`));
       }
     };
@@ -198,84 +220,67 @@ function uploadToCloudinary(file, onProgress) {
 }
 
 /* ════════════════════
-   PROGRESO
+   RESPALDO EN LOCALSTORAGE
 ════════════════════ */
-function showProgress(pct) {
-  const bar   = document.getElementById('um-progress-bar');
-  const label = document.getElementById('um-progress-label');
-  if (bar)   bar.style.width   = pct + '%';
-  if (label) label.textContent = pct < 100 ? `Subiendo... ${pct}%` : '✅ ¡Listo!';
-}
+const LS_KEY = 'nuestrosRecuerdos_cards';
 
-function showUploadError(msg) {
-  const el = document.getElementById('um-error');
-  if (el) { el.textContent = msg; el.style.display = 'block'; }
-  setTimeout(() => { if (el) el.style.display = 'none'; }, 4000);
-}
-
-function showUploadSuccess(title) {
-  const el = document.getElementById('um-success-title');
-  if (el) el.textContent = `"${title}" fue agregado 💖`;
+function saveToLocalStorage(categoryId, card) {
+  try {
+    const all = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+    if (!all[categoryId]) all[categoryId] = [];
+    // evitar duplicados por título+url
+    const exists = all[categoryId].some(c => c.title === card.title && (c.image === card.image || c.video === card.video));
+    if (!exists) all[categoryId].unshift(card);
+    localStorage.setItem(LS_KEY, JSON.stringify(all));
+  } catch(e) { /* incógnito sin storage — no pasa nada */ }
 }
 
 /* ════════════════════
-   GUARDAR METADATA EN CLOUDINARY
+   CARGAR DESDE CLOUDINARY
+   ✅ Usa el endpoint público de listas
+   Requiere activar "Resource list" en
+   Cloudinary → Settings → Security
 ════════════════════ */
-// ✅ CORRECCIÓN 2: función ahora recibe publicId y resourceType
-async function saveCardToStorage(categoryId, card, publicId, resourceType) {
-  const context = [
-    `title=${encodeURIComponent(card.title)}`,
-    `sub=${encodeURIComponent(card.sub)}`,
-    `desc=${encodeURIComponent(card.desc)}`,
-    `emoji=${encodeURIComponent(card.emoji)}`,
-    `category=${categoryId}`,
-    `gradient=${encodeURIComponent(card.gradient)}`,
-    `type=${resourceType}`,
-  ].join('|');
-
-  await fetch(
-    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/resources/${resourceType}/upload`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        public_ids: [publicId],
-        context,
-        api_key: CLOUDINARY_API_KEY,
-      }),
-    }
-  );
-}
-
-/* ════════════════════
-   CARGAR TARJETAS DESDE CLOUDINARY
-════════════════════ */
-// ✅ CORRECCIÓN 3: carga desde Cloudinary en vez de localStorage
 async function loadSavedCards() {
+  let loaded = false;
+
+  // Intento 1: Cloudinary (funciona en cualquier dispositivo)
   try {
     const res = await fetch(
       `https://res.cloudinary.com/${CLOUDINARY_CLOUD}/image/list/nuestros-recuerdos.json`
     );
-    if (!res.ok) return;
-    const data = await res.json();
-
-    (data.resources || []).forEach(r => {
-      const ctx      = r.context?.custom || {};
-      const category = ctx.category || 'c1';
-      const type     = ctx.type     || 'image';
-      const card = {
-        title:    decodeURIComponent(ctx.title    || 'Recuerdo'),
-        sub:      decodeURIComponent(ctx.sub      || ''),
-        desc:     decodeURIComponent(ctx.desc     || ''),
-        emoji:    decodeURIComponent(ctx.emoji    || '📸'),
-        gradient: decodeURIComponent(ctx.gradient || randomGradient()),
-        image:    type === 'image' ? r.secure_url : '',
-        video:    type === 'video' ? r.secure_url : '',
-      };
-      addCardToCarousel(category, card, false);
-    });
+    if (res.ok) {
+      const data = await res.json();
+      (data.resources || []).forEach(r => {
+        const ctx      = r.context?.custom || {};
+        const category = ctx.category || 'c1';
+        const type     = ctx.type     || 'image';
+        const card = {
+          title:    decodeURIComponent(ctx.title    || 'Recuerdo'),
+          sub:      decodeURIComponent(ctx.sub      || ''),
+          desc:     decodeURIComponent(ctx.desc     || ''),
+          emoji:    decodeURIComponent(ctx.emoji    || '📸'),
+          gradient: decodeURIComponent(ctx.gradient || randomGradient()),
+          image:    type === 'image' ? `https://res.cloudinary.com/${CLOUDINARY_CLOUD}/image/upload/${r.public_id}` : '',
+          video:    type === 'video' ? `https://res.cloudinary.com/${CLOUDINARY_CLOUD}/video/upload/${r.public_id}` : '',
+        };
+        addCardToCarousel(category, card, false);
+        saveToLocalStorage(category, card); // sincronizar localStorage
+      });
+      loaded = true;
+    }
   } catch (err) {
-    console.warn('No se pudieron cargar recuerdos:', err);
+    console.warn('Cloudinary list no disponible:', err);
+  }
+
+  // Intento 2: localStorage como respaldo (misma sesión / mismo navegador)
+  if (!loaded) {
+    try {
+      const all = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+      Object.entries(all).forEach(([catId, cards]) => {
+        cards.forEach(card => addCardToCarousel(catId, card, false));
+      });
+    } catch(e) {}
   }
 }
 
@@ -297,7 +302,8 @@ function addCardToCarousel(categoryId, card, prepend = false) {
   } else if (card.video) {
     thumbHTML = `<div class="card-thumb-placeholder" style="background:${card.gradient};position:relative;">
                    <span style="font-size:2rem">▶</span>
-                   <span style="font-size:0.65rem;position:absolute;bottom:4px;right:6px;background:rgba(0,0,0,0.6);padding:1px 5px;border-radius:3px;">VIDEO</span>
+                   <span style="font-size:0.65rem;position:absolute;bottom:4px;right:6px;
+                         background:rgba(0,0,0,0.6);padding:1px 5px;border-radius:3px;">VIDEO</span>
                  </div>`;
   } else {
     thumbHTML = `<div class="card-thumb-placeholder" style="background:${card.gradient}">
@@ -321,6 +327,27 @@ function addCardToCarousel(categoryId, card, prepend = false) {
   } else {
     container.prepend(el);
   }
+}
+
+/* ════════════════════
+   PROGRESO
+════════════════════ */
+function showProgress(pct) {
+  const bar   = document.getElementById('um-progress-bar');
+  const label = document.getElementById('um-progress-label');
+  if (bar)   bar.style.width   = pct + '%';
+  if (label) label.textContent = pct < 100 ? `Subiendo... ${pct}%` : '✅ ¡Listo!';
+}
+
+function showUploadError(msg) {
+  const el = document.getElementById('um-error');
+  if (el) { el.textContent = msg; el.style.display = 'block'; }
+  setTimeout(() => { if (el) el.style.display = 'none'; }, 4000);
+}
+
+function showUploadSuccess(title) {
+  const el = document.getElementById('um-success-title');
+  if (el) el.textContent = `"${title}" fue agregado 💖`;
 }
 
 /* ════════════════════
