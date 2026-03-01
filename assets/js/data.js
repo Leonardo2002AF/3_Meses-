@@ -21,10 +21,10 @@ const HERO = {
   title:       "La Primera Vez que te Vi",
   titleEm:     "te Vi",
   match:       "💖 99% Amor",
-  year:        "2024",
+  year:        "2025",
   description: "Ese momento mágico donde todo cambió. La luz, tu sonrisa, esa sensación de que algo increíble estaba por comenzar. Un recuerdo que vale para toda la vida.",
-  image:       "assets/images/hero/hero.jpeg",   // ← cambia por tu foto
-  video:       "assets/images/hero/hero.jpeg",         // ← o pon tu video
+  image:       "https://res.cloudinary.com/dwtqq0c7y/image/upload/v1772377096/klwwkk1bl4qahqwr6mg9.jpg",   // ← cambia por tu foto
+  video:       "https://res.cloudinary.com/dwtqq0c7y/image/upload/v1772377096/klwwkk1bl4qahqwr6mg9.jpg",         // ← o pon tu video
 };
 
 const SECTIONS = [
