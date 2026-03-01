@@ -203,9 +203,17 @@ async function startUpload() {
     // Guardar también en localStorage como respaldo
     saveToLocalStorage(category, card);
 
-    addCardToCarousel(category, card);
-    showUploadSuccess(title);
-    setUploadStep(4);
+    // Mostrar inmediatamente sin esperar recarga
+      addCardToCarousel(category, card);
+      saveToLocalStorage(category, card);
+      showUploadSuccess(title);
+      setUploadStep(4);
+
+      // Recargar lista desde Cloudinary después de 3 segundos
+      // para sincronizar con otros dispositivos
+      setTimeout(() => {
+        loadSavedCards();
+      }, 3000);
 
   } catch (err) {
     console.error(err);
@@ -224,7 +232,12 @@ function uploadToCloudinary(file, contextStr, onProgress) {
     form.append('file',          file);
     form.append('upload_preset', CLOUDINARY_PRESET);
     form.append('folder',        'nuestros-recuerdos');
-    form.append('context',       contextStr);  // ✅ contexto en la subida
+    form.append('context',       contextStr);
+
+    // Tags como respaldo — codifica los datos clave
+    const params = new URLSearchParams(contextStr.replace(/\|/g, '&'));
+    const tag = `cat_${params.get('category') || 'c1'}`;
+    form.append('tags', tag);
 
     const resourceType = file.type.startsWith('video/') ? 'video' : 'image';
     const endpoint = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/${resourceType}/upload`;
@@ -275,29 +288,45 @@ function saveToLocalStorage(categoryId, card) {
 ════════════════════ */
 async function loadSavedCards() {
   let loaded = false;
+  const bust = `?ts=${Date.now()}`;
 
   try {
-    // Cargar imágenes y videos por separado
     const [imgRes, vidRes] = await Promise.all([
-      fetch(`https://res.cloudinary.com/${CLOUDINARY_CLOUD}/image/list/nuestros-recuerdos.json`),
-      fetch(`https://res.cloudinary.com/${CLOUDINARY_CLOUD}/video/list/nuestros-recuerdos.json`),
+      fetch(`https://res.cloudinary.com/${CLOUDINARY_CLOUD}/image/list/nuestros-recuerdos.json${bust}`),
+      fetch(`https://res.cloudinary.com/${CLOUDINARY_CLOUD}/video/list/nuestros-recuerdos.json${bust}`),
     ]);
 
     const imgData = imgRes.ok ? await imgRes.json() : { resources: [] };
     const vidData = vidRes.ok ? await vidRes.json() : { resources: [] };
 
+    if (!imgRes.ok && !vidRes.ok) {
+      console.info('Aún no hay recuerdos subidos en Cloudinary — sube el primero.');
+      try {
+        const all = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+        Object.entries(all).forEach(([catId, cards]) => {
+          cards.forEach(card => addCardToCarousel(catId, card, false));
+        });
+      } catch(e) {}
+      return;
+    }
+
     const all = [
-      ...( imgData.resources || []).map(r => ({ ...r, resourceType: 'image' })),
-      ...( vidData.resources || []).map(r => ({ ...r, resourceType: 'video' })),
+      ...(imgData.resources || []).map(r => ({ ...r, resourceType: 'image' })),
+      ...(vidData.resources || []).map(r => ({ ...r, resourceType: 'video' })),
     ];
 
     if (all.length > 0) {
       all.forEach(r => {
-        const ctx      = r.context?.custom || {};
-        const category = ctx.category || 'c1';
-        const type     = ctx.type     || r.resourceType || 'image';
+        const ctx = r.context?.custom || {};
+
+        // ✅ Recuperar categoría desde tags si el context está vacío
+        const tagCat   = (r.tags || []).find(t => t.startsWith('cat_'));
+        const category = ctx.category || (tagCat ? tagCat.replace('cat_', '') : 'c1');
+        const type     = ctx.type || r.resourceType || 'image';
+
         const card = {
-          title:    decodeURIComponent(ctx.title    || 'Recuerdo'),
+          // ✅ Si no hay título en context usa el nombre del archivo
+          title:    decodeURIComponent(ctx.title    || r.display_name || r.public_id.split('/').pop() || 'Recuerdo'),
           sub:      decodeURIComponent(ctx.sub      || ''),
           desc:     decodeURIComponent(ctx.desc     || ''),
           emoji:    decodeURIComponent(ctx.emoji    || '📸'),
@@ -305,6 +334,7 @@ async function loadSavedCards() {
           image:    type === 'image' ? `https://res.cloudinary.com/${CLOUDINARY_CLOUD}/image/upload/${r.public_id}` : '',
           video:    type === 'video' ? `https://res.cloudinary.com/${CLOUDINARY_CLOUD}/video/upload/${r.public_id}` : '',
         };
+
         addCardToCarousel(category, card, false);
         saveToLocalStorage(category, card);
       });
