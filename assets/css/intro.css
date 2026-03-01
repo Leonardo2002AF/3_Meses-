@@ -1,0 +1,151 @@
+/* ══════════════════════════════════════════
+   INTRO ANIMATION — Estilo Netflix
+   ══════════════════════════════════════════ */
+
+/* Bloquea el scroll mientras el intro está activo */
+body.intro-active {
+  overflow: hidden;
+}
+
+/* ─── OVERLAY PRINCIPAL ─── */
+#intro-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Fade out final del overlay completo */
+  transition: opacity 0.6s ease;
+}
+
+#intro-overlay.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ─── CONTENEDOR DEL SÍMBOLO ─── */
+.intro-symbol {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─── LA "N" / CORAZÓN SVG ─── */
+.intro-logo-svg {
+  width: 120px;
+  height: 120px;
+  /* Empieza invisible */
+  opacity: 0;
+  transform: scale(0.6);
+  animation: introLogoAppear 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.2s forwards;
+}
+
+@keyframes introLogoAppear {
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ─── BARRA DE LUZ (efecto sello de Netflix) ─── */
+.intro-shine {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(
+    105deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 80%
+  );
+  opacity: 0;
+  animation: introShine 0.5s ease-in-out 0.85s forwards;
+}
+
+@keyframes introShine {
+  0%   { left: -80%; opacity: 0; }
+  20%  { opacity: 1; }
+  100% { left: 120%;  opacity: 0; }
+}
+
+/* ─── RESPLANDOR ROJO DETRÁS ─── */
+.intro-glow {
+  position: absolute;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(229,9,20,0.5) 0%, transparent 70%);
+  opacity: 0;
+  transform: scale(0.5);
+  animation: introGlow 0.8s ease-out 0.3s forwards;
+  pointer-events: none;
+}
+
+@keyframes introGlow {
+  to {
+    opacity: 1;
+    transform: scale(1.4);
+  }
+}
+
+/* ─── LÍNEA INFERIOR (igual que Netflix) ─── */
+.intro-bar {
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: 90%;
+  height: 4px;
+  background: linear-gradient(to right, transparent, #e50914, transparent);
+  border-radius: 2px;
+  transform-origin: center;
+  animation: introBar 0.4s ease-out 0.65s forwards;
+}
+
+@keyframes introBar {
+  to { transform: translateX(-50%) scaleX(1); }
+}
+
+/* ─── TEXTO "Nuestros Recuerdos" ─── */
+.intro-text {
+  position: absolute;
+  bottom: -52px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  font-weight: 400;
+  letter-spacing: 4px;
+  color: white;
+  opacity: 0;
+  animation: introText 0.6s ease-out 0.9s forwards;
+}
+
+@keyframes introText {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  to   { opacity: 0.85; transform: translateX(-50%) translateY(0); }
+}
+
+/* ─── ONDAS DE PULSO ─── */
+.intro-pulse {
+  position: absolute;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  border: 2px solid rgba(229,9,20,0.6);
+  opacity: 0;
+  animation: introPulse 1s ease-out 0.5s forwards;
+}
+.intro-pulse:nth-child(2) { animation-delay: 0.65s; }
+.intro-pulse:nth-child(3) { animation-delay: 0.80s; }
+
+@keyframes introPulse {
+  0%   { opacity: 0.7; transform: scale(0.9); }
+  100% { opacity: 0;   transform: scale(2.2); }
+}

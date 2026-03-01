@@ -1,0 +1,299 @@
+/* ══════════════════════════════════════════
+   UPLOAD MODAL — Estilos
+   ══════════════════════════════════════════ */
+
+/* ─── Overlay ─── */
+#upload-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.88);
+  z-index: 2500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+  padding: 1rem;
+}
+#upload-modal.open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* ─── Caja principal ─── */
+.um-box {
+  background: #181818;
+  border-radius: 14px;
+  width: 100%;
+  max-width: 500px;
+  border: 1px solid #2a2a2a;
+  overflow: hidden;
+  transform: translateY(30px);
+  transition: transform 0.3s;
+  max-height: 92vh;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.um-box::-webkit-scrollbar { display: none; }
+#upload-modal.open .um-box {
+  transform: translateY(0);
+}
+
+/* ─── Header ─── */
+.um-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.4rem 1.6rem 1rem;
+  border-bottom: 1px solid #252525;
+}
+.um-header h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  color: white;
+}
+.um-close {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: #2a2a2a;
+  border: none;
+  color: #aaa;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s, color 0.2s;
+  flex-shrink: 0;
+}
+.um-close:hover { background: var(--netflix-red); color: white; }
+
+/* ─── Indicador de pasos ─── */
+.um-steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.6rem 0;
+}
+.um-step-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #333;
+  transition: background 0.3s, transform 0.3s;
+}
+.um-step-dot.active {
+  background: var(--netflix-red);
+  transform: scale(1.2);
+}
+.um-step-line {
+  flex: 1;
+  height: 2px;
+  background: #333;
+  border-radius: 1px;
+  max-width: 60px;
+}
+
+/* ─── Cuerpo de pasos ─── */
+.um-body { padding: 1.2rem 1.6rem 1.6rem; }
+
+.um-step { display: none; }
+.um-step.um-step-active { display: block; }
+
+/* ─── PASO 1: Dropzone ─── */
+.um-dropzone {
+  border: 2px dashed #333;
+  border-radius: 10px;
+  padding: 2rem 1rem;
+  text-align: center;
+  transition: border-color 0.2s, background 0.2s;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  cursor: pointer;
+}
+.um-dropzone:hover {
+  border-color: var(--netflix-red);
+  background: rgba(229,9,20,0.04);
+}
+.um-drop-icon { font-size: 2.8rem; }
+.um-drop-label { font-size: 1rem; color: white; font-weight: 600; }
+.um-drop-sub   { font-size: 0.78rem; color: #666; }
+
+.um-choose-btn {
+  margin-top: 0.5rem;
+  font-size: 0.85rem !important;
+  padding: 0.55rem 1.4rem !important;
+}
+
+/* ─── Preview de archivo ─── */
+.um-preview-media {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+}
+.um-preview-name {
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 0.4rem;
+}
+.um-change-btn {
+  font-size: 0.78rem !important;
+  padding: 0.4rem 1rem !important;
+  margin-top: 0.5rem;
+}
+
+/* ─── PASO 2: Detalles ─── */
+.um-field {
+  margin-bottom: 1rem;
+}
+.um-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #888;
+  margin-bottom: 0.4rem;
+}
+.um-input,
+.um-textarea,
+.um-select {
+  width: 100%;
+  background: #0d0d0d;
+  border: 2px solid #2a2a2a;
+  border-radius: 6px;
+  color: white;
+  font-family: 'Lato', sans-serif;
+  font-size: 0.95rem;
+  padding: 0.7rem 0.9rem;
+  transition: border-color 0.2s;
+  resize: none;
+}
+.um-input:focus,
+.um-textarea:focus,
+.um-select:focus {
+  outline: none;
+  border-color: var(--netflix-red);
+}
+.um-textarea { height: 80px; }
+.um-select option { background: #1a1a1a; }
+
+.um-emoji-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.4rem;
+}
+.um-emoji-opt {
+  font-size: 1.4rem;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  transition: border-color 0.15s, transform 0.15s;
+  background: none;
+}
+.um-emoji-opt:hover       { transform: scale(1.2); }
+.um-emoji-opt.selected    { border-color: var(--netflix-red); background: rgba(229,9,20,0.1); }
+
+/* ─── PASO 3: Progreso ─── */
+.um-progress-wrap {
+  text-align: center;
+  padding: 2rem 0;
+}
+.um-progress-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  animation: spin 1.5s linear infinite;
+  display: inline-block;
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.um-progress-title {
+  font-size: 1rem;
+  color: white;
+  font-weight: 600;
+  margin-bottom: 1.2rem;
+}
+.um-progress-track {
+  height: 6px;
+  background: #2a2a2a;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 0.6rem;
+}
+.um-progress-bar {
+  height: 100%;
+  background: var(--netflix-red);
+  border-radius: 3px;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+#um-progress-label {
+  font-size: 0.82rem;
+  color: #888;
+}
+
+/* ─── PASO 4: Éxito ─── */
+.um-success-wrap {
+  text-align: center;
+  padding: 2rem 0;
+}
+.um-success-icon {
+  font-size: 4rem;
+  display: block;
+  margin-bottom: 1rem;
+  animation: popIn 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes popIn {
+  from { transform: scale(0.4); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+.um-success-wrap h4 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  color: white;
+  margin-bottom: 0.4rem;
+}
+#um-success-title {
+  color: var(--pink);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ─── Error ─── */
+#um-error {
+  display: none;
+  background: rgba(229,9,20,0.12);
+  border: 1px solid rgba(229,9,20,0.4);
+  border-radius: 6px;
+  color: #ff6b6b;
+  font-size: 0.82rem;
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+/* ─── Botones de navegación ─── */
+.um-nav {
+  display: flex;
+  gap: 0.7rem;
+  justify-content: flex-end;
+  margin-top: 1.2rem;
+}
+.um-nav .btn {
+  font-size: 0.88rem;
+  padding: 0.6rem 1.4rem;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 480px) {
+  .um-box { border-radius: 10px 10px 0 0; max-height: 95vh; }
+  #upload-modal { align-items: flex-end; padding: 0; }
+}

@@ -7,6 +7,8 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>❤️</text></svg>" />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/css/styles.css" />
+  <link rel="stylesheet" href="assets/css/intro.css" />
+  <link rel="stylesheet" href="assets/css/upload.css" />
 </head>
 <body>
 
@@ -81,15 +83,12 @@
     <div class="memory-banner-text">
       <h3>Nuestro <span>Álbum de Amor</span></h3>
       <p>
-        Agrega tus videos e imágenes en las carpetas
-        <code style="color:#e50914;font-size:0.8rem">assets/videos/</code> y
-        <code style="color:#e50914;font-size:0.8rem">assets/images/cards/</code>,
-        luego edita <code style="color:#e50914;font-size:0.8rem">assets/js/data.js</code>
-        para enlazarlos.
+        Sube fotos y videos directamente desde tu celular o computadora.
+        Cada recuerdo que agregues aparecerá al instante en la página.
       </p>
     </div>
     <div class="memory-banner-actions">
-      <button class="btn btn-red">＋ Agregar Recuerdo</button>
+      <button class="btn btn-red" onclick="openUploadModal()">＋ Agregar Recuerdo</button>
       <button class="btn btn-outline">🎬 Ver Todo</button>
     </div>
   </div>
@@ -250,10 +249,153 @@
 
 
   <!-- ══════════════════════════════════
+       MODAL: SUBIR RECUERDO
+  ═══════════════════════════════════ -->
+  <div id="upload-modal" onclick="if(event.target===this)closeUploadModal()">
+    <div class="um-box">
+
+      <!-- Header -->
+      <div class="um-header">
+        <h3>📸 Nuevo Recuerdo</h3>
+        <button class="um-close" onclick="closeUploadModal()">✕</button>
+      </div>
+
+      <!-- Indicador de pasos -->
+      <div class="um-steps">
+        <div class="um-step-dot active"></div>
+        <div class="um-step-line"></div>
+        <div class="um-step-dot"></div>
+        <div class="um-step-line"></div>
+        <div class="um-step-dot"></div>
+        <div class="um-step-line"></div>
+        <div class="um-step-dot"></div>
+      </div>
+
+      <div class="um-body">
+
+        <!-- Error -->
+        <div id="um-error"></div>
+
+        <!-- PASO 1: Elegir archivo -->
+        <div class="um-step um-step-active">
+          <div class="um-dropzone" id="um-dropzone"
+               onclick="document.getElementById('um-file-input') && document.getElementById('um-file-input').click()">
+            <div class="um-drop-icon">📁</div>
+            <p class="um-drop-label">Toca para elegir una foto o video</p>
+            <p class="um-drop-sub">JPG, PNG, MP4, MOV · Máx. 100 MB</p>
+            <input type="file" id="um-file-input" accept="image/*,video/*" capture="environment"
+                   style="display:none" onchange="onFileSelected(event)"/>
+            <button class="btn btn-outline um-choose-btn"
+                    onclick="event.stopPropagation();document.getElementById('um-file-input').click()">
+              📷 Elegir archivo
+            </button>
+          </div>
+          <div class="um-nav">
+            <button class="btn btn-info"  onclick="closeUploadModal()">Cancelar</button>
+            <button class="btn btn-red"   onclick="if(uploadState.file){setUploadStep(2)}else{showUploadError('Primero elige un archivo.')}">Siguiente →</button>
+          </div>
+        </div>
+
+        <!-- PASO 2: Detalles del recuerdo -->
+        <div class="um-step">
+          <div class="um-field">
+            <label class="um-label" for="um-title">Título del recuerdo *</label>
+            <input class="um-input" id="um-title" type="text"
+                   placeholder="Ej: Primera cita en el parque" maxlength="60"/>
+          </div>
+          <div class="um-field">
+            <label class="um-label" for="um-desc">Descripción</label>
+            <textarea class="um-textarea" id="um-desc"
+                      placeholder="Cuenta algo sobre este momento especial..."></textarea>
+          </div>
+          <div class="um-field">
+            <label class="um-label">Emoji representativo</label>
+            <input type="hidden" id="um-emoji" value="📸"/>
+            <div class="um-emoji-row" id="um-emoji-row">
+              <!-- generado por JS -->
+            </div>
+          </div>
+          <div class="um-field">
+            <label class="um-label" for="um-category">Sección</label>
+            <select class="um-select" id="um-category">
+              <!-- generado por JS -->
+            </select>
+          </div>
+          <div class="um-nav">
+            <button class="btn btn-info" onclick="setUploadStep(1)">← Atrás</button>
+            <button class="btn btn-red"  onclick="startUpload()">♥ Subir</button>
+          </div>
+        </div>
+
+        <!-- PASO 3: Progreso -->
+        <div class="um-step">
+          <div class="um-progress-wrap">
+            <span class="um-progress-icon">⏳</span>
+            <p class="um-progress-title">Subiendo tu recuerdo...</p>
+            <div class="um-progress-track">
+              <div class="um-progress-bar" id="um-progress-bar"></div>
+            </div>
+            <p id="um-progress-label">Preparando...</p>
+          </div>
+        </div>
+
+        <!-- PASO 4: Éxito -->
+        <div class="um-step">
+          <div class="um-success-wrap">
+            <span class="um-success-icon">💖</span>
+            <h4>¡Recuerdo guardado!</h4>
+            <p id="um-success-title"></p>
+            <div class="um-nav" style="justify-content:center">
+              <button class="btn btn-red"  onclick="closeUploadModal()">✓ Ver en la página</button>
+              <button class="btn btn-info" onclick="resetUploadModal();setUploadStep(1)">＋ Agregar otro</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════
        SCRIPTS
   ═══════════════════════════════════ -->
+  <!-- intro.js va PRIMERO para que se inyecte antes que cualquier otro script -->
+  <script src="assets/js/intro.js"></script>
   <script src="assets/js/data.js"></script>
   <script src="assets/js/app.js"></script>
+  <script src="assets/js/upload.js"></script>
+  <script>
+    /* ── Poblar emojis y categorías del modal de subida ── */
+    document.addEventListener('DOMContentLoaded', () => {
+      const emojis = ['📸','🎬','🌹','💋','🏖️','✈️','🎂','💝','🌿','☕','🎵','🏠','🌸','💃','⛺'];
+      const row = document.getElementById('um-emoji-row');
+      if (row) {
+        emojis.forEach((e, i) => {
+          const btn = document.createElement('button');
+          btn.className = 'um-emoji-opt' + (i === 0 ? ' selected' : '');
+          btn.textContent = e;
+          btn.type = 'button';
+          btn.onclick = () => {
+            document.querySelectorAll('.um-emoji-opt').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            document.getElementById('um-emoji').value = e;
+          };
+          row.appendChild(btn);
+        });
+      }
+
+      const sel = document.getElementById('um-category');
+      if (sel) {
+        UPLOAD_CATEGORIES.forEach(cat => {
+          const opt = document.createElement('option');
+          opt.value = cat.id;
+          opt.textContent = cat.label;
+          sel.appendChild(opt);
+        });
+      }
+    });
+  </script>
 
 </body>
 </html>
