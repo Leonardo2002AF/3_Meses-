@@ -359,10 +359,19 @@ function addCardToCarousel(categoryId, card, prepend = false) {
                       style="width:100%;height:120px;object-fit:cover;"
                       onerror="this.style.display='none'">`;
   } else if (card.video) {
-    thumbHTML = `<div class="card-thumb-placeholder" style="background:${card.gradient};position:relative;">
-                   <span style="font-size:2rem">▶</span>
-                   <span style="font-size:0.65rem;position:absolute;bottom:4px;right:6px;
-                         background:rgba(0,0,0,0.6);padding:1px 5px;border-radius:3px;">VIDEO</span>
+    // ✅ Thumbnail automático desde Cloudinary — frame del segundo 2
+    const thumbUrl = card.video
+      .replace('/video/upload/', '/video/upload/w_400,h_240,c_fill,so_2/')
+      .replace(/\.[^/.]+$/, '.jpg');
+
+    thumbHTML = `<div style="position:relative;width:100%;height:120px;overflow:hidden;border-radius:4px 4px 0 0;">
+                   <img src="${thumbUrl}" alt="${card.title}"
+                        style="width:100%;height:120px;object-fit:cover;display:block;"
+                        onerror="this.parentElement.innerHTML='<div style=\\'width:100%;height:120px;background:${card.gradient};display:flex;align-items:center;justify-content:center;font-size:2rem\\'>▶</div>'"/>
+                   <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+                     <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.85);display:flex;align-items:center;justify-content:center;font-size:1rem;">▶</div>
+                   </div>
+                   <span style="position:absolute;bottom:4px;right:6px;font-size:0.6rem;background:rgba(0,0,0,0.7);color:white;padding:1px 5px;border-radius:3px;font-weight:700;">VIDEO</span>
                  </div>`;
   } else {
     thumbHTML = `<div class="card-thumb-placeholder" style="background:${card.gradient}">
@@ -387,7 +396,6 @@ function addCardToCarousel(categoryId, card, prepend = false) {
     container.prepend(el);
   }
 }
-
 /* ════════════════════
    PROGRESO
 ════════════════════ */
