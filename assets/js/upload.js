@@ -1,32 +1,24 @@
 /* ══════════════════════════════════════════
    NUESTROS RECUERDOS — Subida a Cloudinary
-   ══════════════════════════════════════════
-
-   👉 ANTES DE USAR:
-   1. Crea cuenta gratuita en cloudinary.com
-   2. Ve a Dashboard y copia tu Cloud Name
-   3. Ve a Settings → Upload → Upload Presets
-      → Add upload preset → Signing Mode: Unsigned
-      → Guarda y copia el nombre del preset
-   4. Reemplaza los valores de abajo
    ══════════════════════════════════════════ */
 
-const CLOUDINARY_CLOUD = "dwtqq0c7y";   // ← reemplaza
-const CLOUDINARY_PRESET = "2 Meses"; // ← reemplaza
+const CLOUDINARY_CLOUD  = "dwtqq0c7y";
+const CLOUDINARY_PRESET = "2 Meses";
+const CLOUDINARY_API_KEY = "779436443365798";
 
 /* ─── Categorías disponibles ─── */
 const UPLOAD_CATEGORIES = [
-  { id: "c1", label: "▶ Seguir Viendo"      },
+  { id: "c1", label: "▶ Seguir Viendo"       },
   { id: "c2", label: "⭐ Momentos Destacados" },
-  { id: "c4", label: "✈ Viajes Juntos"       },
-  { id: "c5", label: "🎂 Fechas Especiales"  },
-  { id: "c6", label: "🏠 Momentos en Casa"   },
+  { id: "c4", label: "✈ Viajes Juntos"        },
+  { id: "c5", label: "🎂 Fechas Especiales"   },
+  { id: "c6", label: "🏠 Momentos en Casa"    },
 ];
 
 /* ─── Estado del modal ─── */
 let uploadState = {
   file:     null,
-  type:     null,   // 'image' | 'video'
+  type:     null,
   preview:  null,
   category: UPLOAD_CATEGORIES[0].id,
 };
@@ -63,7 +55,7 @@ function resetUploadModal() {
   }
   const titleInput = document.getElementById('um-title');
   if (titleInput) titleInput.value = '';
-  const descInput  = document.getElementById('um-desc');
+  const descInput = document.getElementById('um-desc');
   if (descInput)  descInput.value  = '';
 
   setUploadStep(1);
@@ -136,22 +128,18 @@ function triggerFileInput() {
 async function startUpload() {
   const title    = document.getElementById('um-title').value.trim();
   const desc     = document.getElementById('um-desc').value.trim();
-  const emoji    = document.getElementById('um-emoji').value  || '📸';
+  const emoji    = document.getElementById('um-emoji').value || '📸';
   const category = document.getElementById('um-category').value;
 
-  if (!uploadState.file) { showUploadError('Primero elige un archivo.'); return; }
+  if (!uploadState.file) { showUploadError('Primero elige un archivo.');          return; }
   if (!title)             { showUploadError('Escribe un título para el recuerdo.'); return; }
-
-  if (CLOUDINARY_CLOUD === 'TU_CLOUD_NAME') {
-    showUploadError('⚠️ Configura tu Cloud Name y Preset en assets/js/upload.js primero.');
-    return;
-  }
 
   setUploadStep(3);
   showProgress(0);
 
   try {
-    const url  = await uploadToCloudinary(uploadState.file, (pct) => showProgress(pct));
+    const url = await uploadToCloudinary(uploadState.file, (pct) => showProgress(pct));
+
     const card = {
       title,
       emoji,
@@ -162,7 +150,11 @@ async function startUpload() {
       video:    uploadState.type === 'video' ? url : '',
     };
 
-    saveCardToStorage(category, card);
+    // ✅ CORRECCIÓN 1: extraer publicId correctamente y pasar todos los parámetros
+    const publicId = url.split('/upload/')[1].split('.')[0];
+    const resType  = uploadState.type === 'video' ? 'video' : 'image';
+    await saveCardToStorage(category, card, publicId, resType);
+
     addCardToCarousel(category, card);
     showUploadSuccess(title);
     setUploadStep(4);
@@ -177,9 +169,9 @@ async function startUpload() {
 function uploadToCloudinary(file, onProgress) {
   return new Promise((resolve, reject) => {
     const form = new FormData();
-    form.append('file',           file);
-    form.append('upload_preset',  CLOUDINARY_PRESET);
-    form.append('folder',         'nuestros-recuerdos');
+    form.append('file',          file);
+    form.append('upload_preset', CLOUDINARY_PRESET);
+    form.append('folder',        'nuestros-recuerdos');
 
     const resourceType = file.type.startsWith('video/') ? 'video' : 'image';
     const endpoint = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/${resourceType}/upload`;
@@ -227,22 +219,64 @@ function showUploadSuccess(title) {
 }
 
 /* ════════════════════
-   GUARDAR EN LOCALSTORAGE
+   GUARDAR METADATA EN CLOUDINARY
 ════════════════════ */
-const LS_KEY = 'nuestrosRecuerdos_cards';
+// ✅ CORRECCIÓN 2: función ahora recibe publicId y resourceType
+async function saveCardToStorage(categoryId, card, publicId, resourceType) {
+  const context = [
+    `title=${encodeURIComponent(card.title)}`,
+    `sub=${encodeURIComponent(card.sub)}`,
+    `desc=${encodeURIComponent(card.desc)}`,
+    `emoji=${encodeURIComponent(card.emoji)}`,
+    `category=${categoryId}`,
+    `gradient=${encodeURIComponent(card.gradient)}`,
+    `type=${resourceType}`,
+  ].join('|');
 
-function saveCardToStorage(categoryId, card) {
-  const all = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
-  if (!all[categoryId]) all[categoryId] = [];
-  all[categoryId].unshift(card);   // agregar al inicio
-  localStorage.setItem(LS_KEY, JSON.stringify(all));
+  await fetch(
+    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/resources/${resourceType}/upload`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        public_ids: [publicId],
+        context,
+        api_key: CLOUDINARY_API_KEY,
+      }),
+    }
+  );
 }
 
-function loadSavedCards() {
-  const all = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
-  Object.entries(all).forEach(([catId, cards]) => {
-    cards.forEach(card => addCardToCarousel(catId, card, true));
-  });
+/* ════════════════════
+   CARGAR TARJETAS DESDE CLOUDINARY
+════════════════════ */
+// ✅ CORRECCIÓN 3: carga desde Cloudinary en vez de localStorage
+async function loadSavedCards() {
+  try {
+    const res = await fetch(
+      `https://res.cloudinary.com/${CLOUDINARY_CLOUD}/image/list/nuestros-recuerdos.json`
+    );
+    if (!res.ok) return;
+    const data = await res.json();
+
+    (data.resources || []).forEach(r => {
+      const ctx      = r.context?.custom || {};
+      const category = ctx.category || 'c1';
+      const type     = ctx.type     || 'image';
+      const card = {
+        title:    decodeURIComponent(ctx.title    || 'Recuerdo'),
+        sub:      decodeURIComponent(ctx.sub      || ''),
+        desc:     decodeURIComponent(ctx.desc     || ''),
+        emoji:    decodeURIComponent(ctx.emoji    || '📸'),
+        gradient: decodeURIComponent(ctx.gradient || randomGradient()),
+        image:    type === 'image' ? r.secure_url : '',
+        video:    type === 'video' ? r.secure_url : '',
+      };
+      addCardToCarousel(category, card, false);
+    });
+  } catch (err) {
+    console.warn('No se pudieron cargar recuerdos:', err);
+  }
 }
 
 /* ════════════════════
@@ -302,7 +336,7 @@ function randomGradient() {
 }
 
 /* ════════════════════
-   INIT — cargar tarjetas guardadas al arrancar
+   INIT
 ════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
   loadSavedCards();
