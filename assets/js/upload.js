@@ -46,7 +46,7 @@ function resetUploadModal() {
       <div class="um-drop-icon">📁</div>
       <p class="um-drop-label">Toca para elegir una foto o video</p>
       <p class="um-drop-sub">JPG, PNG, MP4, MOV · Máx. 100 MB</p>
-      <input type="file" id="um-file-input" accept="image/*,video/*"
+      <input type="file" id="um-file-input" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,video/mp4,video/mov,video/quicktime"
              style="display:none" onchange="onFileSelected(event)"/>
       <button class="btn btn-outline um-choose-btn" onclick="document.getElementById('um-file-input').click()">
         📷 Elegir archivo
@@ -76,25 +76,42 @@ function setUploadStep(step) {
    SELECCIÓN DE ARCHIVO
 ════════════════════ */
 function onFileSelected(e) {
-  const file = e.target.files[0];
-  if (!file) return;
+      const file = e.target.files[0];
+      if (!file) return;
 
-  if (file.size > 100 * 1024 * 1024) {
-    showUploadError('El archivo supera los 100 MB. Elige uno más pequeño.');
-    return;
-  }
+      if (file.size > 100 * 1024 * 1024) {
+        showUploadError('El archivo supera los 100 MB. Elige uno más pequeño.');
+        return;
+      }
 
-  uploadState.file = file;
-  uploadState.type = file.type.startsWith('video/') ? 'video' : 'image';
+      // Fix iOS: HEIC/HEIF no es soportado directamente
+      const isHEIC = file.type === 'image/heic' 
+                  || file.type === 'image/heif'
+                  || file.name.toLowerCase().endsWith('.heic')
+                  || file.name.toLowerCase().endsWith('.heif');
 
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    uploadState.preview = ev.target.result;
-    showPreview(uploadState.type, ev.target.result, file.name);
-    setUploadStep(2);
-  };
-  reader.readAsDataURL(file);
-}
+      if (isHEIC) {
+        showUploadError('Formato HEIC no soportado. Ve a Ajustes → Cámara → Formato → selecciona "Más compatible" para usar JPG.');
+        return;
+      }
+
+      uploadState.file = file;
+      uploadState.type = file.type.startsWith('video/') ? 'video' : 'image';
+
+      const reader = new FileReader();
+
+      reader.onload = (ev) => {
+        uploadState.preview = ev.target.result;
+        showPreview(uploadState.type, ev.target.result, file.name);
+        setUploadStep(2);
+      };
+
+      reader.onerror = () => {
+        showUploadError('No se pudo leer el archivo. Intenta con otra foto.');
+      };
+
+      reader.readAsDataURL(file);
+    }
 
 function showPreview(type, src, name) {
   const dropzone = document.getElementById('um-dropzone');
@@ -103,7 +120,7 @@ function showPreview(type, src, name) {
       <video src="${src}" controls class="um-preview-media"></video>
       <p class="um-preview-name">🎬 ${name}</p>
       <button class="btn btn-outline um-change-btn" onclick="triggerFileInput()">🔄 Cambiar archivo</button>
-      <input type="file" id="um-file-input" accept="image/*,video/*" 
+      <input type="file" id="um-file-input" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,video/mp4,video/mov,video/quicktime" 
              style="display:none" onchange="onFileSelected(event)"/>
     `;
   } else {
@@ -111,7 +128,7 @@ function showPreview(type, src, name) {
       <img src="${src}" alt="preview" class="um-preview-media"/>
       <p class="um-preview-name">🖼️ ${name}</p>
       <button class="btn btn-outline um-change-btn" onclick="triggerFileInput()">🔄 Cambiar archivo</button>
-      <input type="file" id="um-file-input" accept="image/*,video/*" 
+      <input type="file" id="um-file-input" accept="image/jpeg,image/jpg,image/png,image/gif,image/webp,video/mp4,video/mov,video/quicktime"
              style="display:none" onchange="onFileSelected(event)"/>
     `;
   }
