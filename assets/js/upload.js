@@ -46,7 +46,7 @@ function resetUploadModal() {
       <div class="um-drop-icon">📁</div>
       <p class="um-drop-label">Toca para elegir una foto o video</p>
       <p class="um-drop-sub">JPG, PNG, MP4, MOV · Máx. 100 MB</p>
-      <input type="file" id="um-file-input" accept="image/*,video/*" capture="environment"
+      <input type="file" id="um-file-input" accept="image/*,video/*"
              style="display:none" onchange="onFileSelected(event)"/>
       <button class="btn btn-outline um-choose-btn" onclick="document.getElementById('um-file-input').click()">
         📷 Elegir archivo
@@ -103,7 +103,7 @@ function showPreview(type, src, name) {
       <video src="${src}" controls class="um-preview-media"></video>
       <p class="um-preview-name">🎬 ${name}</p>
       <button class="btn btn-outline um-change-btn" onclick="triggerFileInput()">🔄 Cambiar archivo</button>
-      <input type="file" id="um-file-input" accept="image/*,video/*" capture="environment"
+      <input type="file" id="um-file-input" accept="image/*,video/*" 
              style="display:none" onchange="onFileSelected(event)"/>
     `;
   } else {
@@ -111,7 +111,7 @@ function showPreview(type, src, name) {
       <img src="${src}" alt="preview" class="um-preview-media"/>
       <p class="um-preview-name">🖼️ ${name}</p>
       <button class="btn btn-outline um-change-btn" onclick="triggerFileInput()">🔄 Cambiar archivo</button>
-      <input type="file" id="um-file-input" accept="image/*,video/*" capture="environment"
+      <input type="file" id="um-file-input" accept="image/*,video/*" 
              style="display:none" onchange="onFileSelected(event)"/>
     `;
   }
@@ -244,17 +244,26 @@ function saveToLocalStorage(categoryId, card) {
 async function loadSavedCards() {
   let loaded = false;
 
-  // Intento 1: Cloudinary (funciona en cualquier dispositivo)
   try {
-    const res = await fetch(
-      `https://res.cloudinary.com/${CLOUDINARY_CLOUD}/image/list/nuestros-recuerdos.json`
-    );
-    if (res.ok) {
-      const data = await res.json();
-      (data.resources || []).forEach(r => {
+    // Cargar imágenes y videos por separado
+    const [imgRes, vidRes] = await Promise.all([
+      fetch(`https://res.cloudinary.com/${CLOUDINARY_CLOUD}/image/list/nuestros-recuerdos.json`),
+      fetch(`https://res.cloudinary.com/${CLOUDINARY_CLOUD}/video/list/nuestros-recuerdos.json`),
+    ]);
+
+    const imgData = imgRes.ok ? await imgRes.json() : { resources: [] };
+    const vidData = vidRes.ok ? await vidRes.json() : { resources: [] };
+
+    const all = [
+      ...( imgData.resources || []).map(r => ({ ...r, resourceType: 'image' })),
+      ...( vidData.resources || []).map(r => ({ ...r, resourceType: 'video' })),
+    ];
+
+    if (all.length > 0) {
+      all.forEach(r => {
         const ctx      = r.context?.custom || {};
         const category = ctx.category || 'c1';
-        const type     = ctx.type     || 'image';
+        const type     = ctx.type     || r.resourceType || 'image';
         const card = {
           title:    decodeURIComponent(ctx.title    || 'Recuerdo'),
           sub:      decodeURIComponent(ctx.sub      || ''),
@@ -265,7 +274,7 @@ async function loadSavedCards() {
           video:    type === 'video' ? `https://res.cloudinary.com/${CLOUDINARY_CLOUD}/video/upload/${r.public_id}` : '',
         };
         addCardToCarousel(category, card, false);
-        saveToLocalStorage(category, card); // sincronizar localStorage
+        saveToLocalStorage(category, card);
       });
       loaded = true;
     }
@@ -273,7 +282,7 @@ async function loadSavedCards() {
     console.warn('Cloudinary list no disponible:', err);
   }
 
-  // Intento 2: localStorage como respaldo (misma sesión / mismo navegador)
+  // Respaldo localStorage si Cloudinary falla
   if (!loaded) {
     try {
       const all = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
