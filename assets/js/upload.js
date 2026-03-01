@@ -359,12 +359,13 @@ function addCardToCarousel(categoryId, card, prepend = false) {
                       style="width:100%;height:120px;object-fit:cover;"
                       onerror="this.style.display='none'">`;
   } else if (card.video) {
-    // ✅ Thumbnail automático desde Cloudinary — frame del segundo 2
-    const thumbUrl = card.video
-      .replace('/video/upload/', '/video/upload/w_400,h_240,c_fill,so_2/')
-      .replace(/\.[^/.]+$/, '.jpg');
+    // ✅ Extrae el public_id limpio y construye el thumbnail
+    const afterUpload  = card.video.split('/upload/')[1] || '';
+    const videoPublicId = afterUpload
+      .replace(/^v\d+\//, '')   // quita versión tipo v1234567/
+      .replace(/\.[^/.]+$/, ''); // quita extensión .mp4 .mov etc
 
-      console.log('Thumbnail URL:', thumbUrl); // ← agrega esta línea temporal
+    const thumbUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD}/video/upload/w_400,h_240,c_fill,so_2/${videoPublicId}.jpg`;
 
     thumbHTML = `<div style="position:relative;width:100%;height:120px;overflow:hidden;border-radius:4px 4px 0 0;">
                    <img src="${thumbUrl}" alt="${card.title}"
