@@ -195,26 +195,72 @@ function renderTop10() {
 }
 
 /* ─── MODAL DE RECUERDO ─── */
-function openModal(m) {
-  document.getElementById('modal-title').textContent  = m.title;
-  document.getElementById('modal-desc').textContent   = m.desc || m.sub || '';
-  document.getElementById('modal-emoji-inner').textContent = m.emoji;
-  document.getElementById('modal-hero-bg').style.background = m.gradient || '#111';
+function openModal(card) {
+  const session = getSession ? getSession() : null;
+  const isGuest = session?.guest === true;
+  const username = session?.username || null;
 
-  // Video o imagen en el modal
-  const mediaArea = document.getElementById('modal-media');
-  if (m.video) {
-    mediaArea.innerHTML = `<video controls src="${m.video}" style="width:100%;height:100%;border-radius:6px;"></video>`;
-  } else if (m.image) {
-    mediaArea.innerHTML = `<img src="${m.image}" alt="${m.title}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;">`;
+  // Verificar si ya es favorito
+  const favKey  = username ? `favs_${username}` : null;
+  const favs    = favKey ? JSON.parse(localStorage.getItem(favKey) || '[]') : [];
+  const isFav   = favs.some(f => (f.image || f.video) === (card.image || card.video));
+
+  document.getElementById('modal-hero-bg').style.background =
+    card.image ? `url(${card.image}) center/cover` : card.gradient;
+  document.getElementById('modal-emoji-inner').textContent = card.image ? '' : card.emoji;
+  document.getElementById('modal-title').textContent       = card.title;
+  document.getElementById('modal-desc').textContent        = card.desc || card.sub || '';
+
+  // Área de media
+  const mediaEl = document.getElementById('modal-media');
+  if (card.video) {
+    mediaEl.innerHTML = `
+      <video id="modal-video-player" src="${card.video}"
+             style="width:100%;max-height:280px;border-radius:8px;display:block;"
+             controls playsinline>
+      </video>`;
+  } else if (card.image) {
+    mediaEl.innerHTML = `
+      <img src="${card.image}" alt="${card.title}"
+           style="width:100%;max-height:280px;object-fit:contain;border-radius:8px;display:block;"/>`;
   } else {
-    mediaArea.innerHTML = `<span>🎬</span><p>Agrega aquí tu video o foto del recuerdo</p><small>assets/videos/ · assets/images/cards/</small>`;
+    mediaEl.innerHTML = `<span>🎬</span><p>Sin contenido multimedia</p>`;
   }
 
-  document.getElementById('modal').classList.add('open');
+  // Botón reproducir — pantalla completa si hay video
+  const playBtn = document.querySelector('.modal-actions .btn-play');
+  if (playBtn) {
+    if (card.video) {
+      playBtn.style.display = '';
+      playBtn.onclick = () => {
+        const vid = document.getElementById('modal-video-player');
+        if (!vid) return;
+        if (vid.requestFullscreen)            vid.requestFullscreen();
+        else if (vid.webkitRequestFullscreen) vid.webkitRequestFullscreen();
+        else if (vid.webkitEnterFullscreen)   vid.webkitEnterFullscreen(); // iOS
+        vid.play();
+      };
+    } else {
+      playBtn.style.display = 'none';
+    }
+  }
+
+  // Botón ♥ Me Encanta — favoritos (solo usuarios logueados)
+  const favBtn = document.querySelector('.modal-actions .btn-fav');
+  if (favBtn) {
+    if (!isGuest && username) {
+      favBtn.style.display = '';
+      favBtn.textContent   = isFav ? '💖 En favoritos' : '♥ Me Encanta';
+      favBtn.style.background = isFav ? '#c0396e' : '';
+      favBtn.onclick = () => toggleFavorite(card, favBtn);
+    } else {
+      favBtn.style.display = 'none';
+    }
+  }
+
+  document.getElementById('modal').classList.add('active');
   document.body.style.overflow = 'hidden';
 }
-
 function closeModal() {
   document.getElementById('modal').classList.remove('open');
   document.body.style.overflow = '';
@@ -276,3 +322,94 @@ document.addEventListener('DOMContentLoaded', () => {
   initNavbar();
   initOutsideClose();
 });
+function toggleFavorite(card, btn) {
+  const session  = getSession ? getSession() : null;
+  if (!session || session.guest) return;
+
+  const favKey = `favs_${session.username}`;
+  const favs   = JSON.parse(localStorage.getItem(favKey) || '[]');
+  const idx    = favs.findIndex(f => (f.image || f.video) === (card.image || card.video));
+
+  if (idx === -1) {
+    favs.push(card);
+    localStorage.setItem(favKey, JSON.stringify(favs));
+    btn.textContent     = '💖 En favoritos';
+    btn.style.background = '#c0396e';
+    addHeart({ clientX: window.innerWidth/2, clientY: window.innerHeight/2 });
+  } else {
+    favs.splice(idx, 1);
+    localStorage.setItem(favKey, JSON.stringify(favs));
+    btn.textContent      = '♥ Me Encanta';
+    btn.style.background = '';
+  }
+}
+
+function getFavorites() {
+  const session = getSession ? getSession() : null;
+  if (!session || session.guest) return [];
+  const favKey = `favs_${session.username}`;
+  return JSON.parse(localStorage.getItem(favKey) || '[]');
+}
+function openFavoritesModal() {
+  const favs  = getFavorites();
+  const grid  = document.getElementById('favs-grid');
+  const empty = document.getElementById('favs-empty');
+  const modal = document.getElementById('favs-modal');
+
+  grid.innerHTML = '';
+
+  if (favs.length === 0) {
+    grid.style.display   = 'none';
+    empty.style.display  = 'block';
+  } else {
+    grid.style.display   = 'grid';
+    empty.style.display  = 'none';
+
+    favs.forEach(card => {
+      const el = document.createElement('div');
+      el.style.cssText = `cursor:pointer;border-radius:8px;overflow:hidden;
+        background:#1a1a1a;border:1px solid #222;transition:border-color 0.2s;`;
+      el.onmouseenter = () => el.style.borderColor = '#e50914';
+      el.onmouseleave = () => el.style.borderColor = '#222';
+
+      let thumb = '';
+      if (card.image) {
+        thumb = `<img src="${card.image}" style="width:100%;height:100px;object-fit:cover;display:block;"/>`;
+      } else if (card.video) {
+        const afterUpload   = card.video.split('/upload/')[1] || '';
+        const videoPublicId = afterUpload.replace(/^v\d+\//, '').replace(/\.[^/.]+$/, '');
+        const thumbUrl      = `https://res.cloudinary.com/${CLOUDINARY_CLOUD}/video/upload/w_300,h_180,c_fill,so_2/${videoPublicId}.jpg`;
+        thumb = `<div style="position:relative;width:100%;height:100px;overflow:hidden;">
+                   <img src="${thumbUrl}" style="width:100%;height:100px;object-fit:cover;display:block;"
+                        onerror="this.parentElement.style.background='${card.gradient}';this.style.display='none'"/>
+                   <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+                     <div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.85);
+                       display:flex;align-items:center;justify-content:center;font-size:0.8rem;">▶</div>
+                   </div>
+                 </div>`;
+      } else {
+        thumb = `<div style="width:100%;height:100px;background:${card.gradient};
+          display:flex;align-items:center;justify-content:center;font-size:2rem;">${card.emoji}</div>`;
+      }
+
+      el.innerHTML = `
+        ${thumb}
+        <div style="padding:0.5rem 0.6rem;">
+          <div style="font-size:0.78rem;font-weight:700;color:white;font-family:'Lato',sans-serif;
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${card.title}</div>
+          <div style="font-size:0.65rem;color:#666;font-family:'Lato',sans-serif;margin-top:2px;">💖 Favorito</div>
+        </div>`;
+
+      el.onclick = () => { closeFavoritesModal(); openModal(card); };
+      grid.appendChild(el);
+    });
+  }
+
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeFavoritesModal() {
+  document.getElementById('favs-modal').style.display = 'none';
+  document.body.style.overflow = '';
+}

@@ -202,6 +202,9 @@ function toggleAvatarMenu(type, session) {
         <div class="av-menu-name">${session.emoji} ${session.username}</div>
         <div class="av-menu-role">✦ Miembro</div>
       </div>
+      <button class="av-menu-item" onclick="closeAvatarMenu();openFavoritesModal()">
+        💖 Mis favoritos
+      </button>
       <button class="av-menu-item" onclick="closeAvatarMenu();openChangePasswordModal()">
         🔑 Cambiar contraseña
       </button>

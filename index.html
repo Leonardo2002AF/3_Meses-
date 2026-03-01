@@ -269,10 +269,10 @@
         </div>
         <p class="modal-description" id="modal-desc"></p>
         <div class="modal-actions">
-          <button class="btn btn-play">▶ Reproducir</button>
-          <button class="btn btn-red" onclick="addHeart(event)">♥ Me Encanta</button>
-          <button class="btn btn-info" onclick="closeModal()">✕ Cerrar</button>
-        </div>
+        <button class="btn btn-play">▶ Reproducir</button>
+        <button class="btn btn-red btn-fav" onclick="">♥ Me Encanta</button>
+        <button class="btn btn-info" onclick="closeModal()">✕ Cerrar</button>
+      </div>
       </div>
     </div>
   </div>
@@ -510,6 +510,30 @@
                font-family:'Lato',sans-serif;font-size:0.95rem;padding:0.8rem;cursor:pointer;">
         Cancelar
       </button>
+    </div>
+  </div>
+</div>
+<!-- MODAL: FAVORITOS -->
+<div id="favs-modal" style="display:none;position:fixed;inset:0;z-index:4000;
+  background:rgba(0,0,0,0.88);align-items:flex-start;justify-content:center;
+  padding:2rem 1rem;overflow-y:auto;">
+  <div style="background:#121212;border:1px solid #2a2a2a;border-radius:14px;
+    width:100%;max-width:600px;overflow:hidden;margin:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;
+      padding:1.4rem 1.6rem;border-bottom:1px solid #1e1e1e;">
+      <h3 style="font-family:'Playfair Display',serif;color:white;font-size:1.3rem;">
+        💖 Mis Favoritos
+      </h3>
+      <button onclick="closeFavoritesModal()" style="width:32px;height:32px;border-radius:50%;
+        background:#2a2a2a;border:none;color:#aaa;cursor:pointer;font-size:0.9rem;">✕</button>
+    </div>
+    <div id="favs-grid" style="padding:1.4rem;display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:1rem;">
+    </div>
+    <div id="favs-empty" style="display:none;padding:3rem;text-align:center;color:#444;
+      font-family:'Lato',sans-serif;font-size:0.9rem;">
+      <div style="font-size:2.5rem;margin-bottom:1rem;">💔</div>
+      Aún no tienes favoritos.<br>Dale ♥ a los recuerdos que más te gusten.
     </div>
   </div>
 </div>
