@@ -784,107 +784,170 @@ footer p { line-height: 1.8; }
 
 /* ════════════════════════
    RESPONSIVE COMPLETO
-   Mobile · Tablet · Desktop
 ════════════════════════ */
 
 /* ── Celulares pequeños (hasta 480px) ── */
 @media (max-width: 480px) {
 
   /* Navbar */
-  nav { padding: 0 3%; height: 56px; }
+  nav { padding: 0 4%; height: 56px; }
   .nav-logo { font-size: 1.3rem; }
   .nav-links { display: none; }
+  .nav-right { gap: 0.8rem; }
   .nav-icon { font-size: 1rem; }
   .nav-avatar { width: 28px; height: 28px; font-size: 0.7rem; }
 
-  /* Hero */
-  .hero { height: 85vh; min-height: 500px; }
-  .hero-content { padding: 0 5%; }
-  .hero-title { font-size: 1.7rem; line-height: 1.15; }
-  .hero-badge { font-size: 0.62rem; padding: 3px 8px; }
-  .hero-meta { flex-wrap: wrap; gap: 0.5rem; font-size: 0.75rem; }
-  .hero-description { font-size: 0.88rem; line-height: 1.6; margin-bottom: 1.4rem; }
-  .hero-buttons { flex-direction: column; gap: 0.7rem; }
-  .hero-buttons .btn { width: 100%; justify-content: center; font-size: 0.9rem; padding: 0.7rem 1rem; }
+  /* Hero — más compacto, no ocupa toda la pantalla */
+  .hero { height: auto; min-height: unset; padding: 90px 0 40px; }
+  .hero-content { padding: 0 5%; max-width: 100%; }
+  .hero-title { font-size: 1.8rem; line-height: 1.15; }
+  .hero-badge { font-size: 0.62rem; padding: 3px 8px; margin-bottom: 0.6rem; }
+  .hero-meta { flex-wrap: wrap; gap: 0.4rem; font-size: 0.75rem; margin-bottom: 0.7rem; }
+  .hero-description { font-size: 0.85rem; line-height: 1.55; margin-bottom: 1.2rem; }
+
+  /* Botones hero — en fila, NO ocupan todo el ancho */
+  .hero-buttons { flex-direction: row; flex-wrap: wrap; gap: 0.5rem; }
+  .hero-buttons .btn {
+    width: auto !important;
+    flex: 0 0 auto;
+    font-size: 0.82rem;
+    padding: 0.6rem 1.1rem;
+    justify-content: center;
+  }
 
   /* Contador */
-  .counter-section { flex-direction: column; padding: 1.5rem; margin: 0.5rem 3% 2rem; gap: 1.5rem; text-align: center; }
-  .counter-title { font-size: 1.3rem; }
-  .counter-digits { justify-content: center; gap: 0.5rem; flex-wrap: wrap; }
-  .counter-num { font-size: 2.2rem; min-width: 55px; padding: 0.25rem 0.5rem; }
-  .counter-separator { font-size: 2rem; padding-top: 0.3rem; }
-  .counter-unit-label { font-size: 0.62rem; }
-  .counter-since { justify-content: center; font-size: 0.75rem; }
+  .counter-section {
+    flex-direction: column;
+    padding: 1.4rem;
+    margin: 0.5rem 3% 1.5rem;
+    gap: 1.2rem;
+    text-align: center;
+  }
+  .counter-title { font-size: 1.2rem; }
+  .counter-subtitle { font-size: 0.78rem; }
+  .counter-digits { justify-content: center; gap: 0.4rem; }
+  .counter-num { font-size: 2rem; min-width: 50px; padding: 0.2rem 0.4rem; }
+  .counter-separator { font-size: 1.8rem; padding-top: 0.2rem; }
+  .counter-unit-label { font-size: 0.6rem; }
+  .counter-since { justify-content: center; font-size: 0.72rem; }
+  .counter-edit-btn .btn { font-size: 0.82rem; padding: 0.55rem 1.2rem; }
 
   /* Banner */
-  .memory-banner { flex-direction: column; margin: 1rem 3%; padding: 1.5rem; gap: 1.2rem; }
-  .memory-banner-text h3 { font-size: 1.2rem; }
-  .memory-banner-text p { font-size: 0.8rem; }
-  .memory-banner-actions { flex-direction: row; flex-wrap: wrap; }
-  .memory-banner-actions .btn { flex: 1; justify-content: center; font-size: 0.8rem; padding: 0.55rem 0.8rem; }
+  .memory-banner {
+    flex-direction: column;
+    margin: 1rem 3%;
+    padding: 1.3rem;
+    gap: 1rem;
+  }
+  .memory-banner-text h3 { font-size: 1.15rem; }
+  .memory-banner-text p  { font-size: 0.78rem; }
+  .memory-banner-actions { flex-direction: row; gap: 0.5rem; }
+  .memory-banner-actions .btn {
+    flex: 1;
+    justify-content: center;
+    font-size: 0.78rem;
+    padding: 0.5rem 0.6rem;
+    white-space: nowrap;
+  }
 
   /* Secciones */
-  .section { padding: 1rem 0; }
-  .section-title { font-size: 1rem; }
-  .section-explore { font-size: 0.72rem; }
+  .section { padding: 0.8rem 0; }
+  .section-header { padding: 0 3%; margin-bottom: 0.6rem; }
+  .section-title { font-size: 0.95rem; }
+  .section-explore { font-size: 0.7rem; }
 
   /* Carrusel */
-  .carousel { padding: 0.5rem 3%; gap: 5px; }
-  .card { width: 130px; }
-  .card-thumb-placeholder { height: 90px; }
-  .card-title { font-size: 0.72rem; }
-  .card-sub { font-size: 0.65rem; }
+  .carousel { padding: 0.4rem 3%; gap: 5px; }
+  .card { width: 128px; border-radius: 5px; }
+  .card-thumb-placeholder { height: 85px; font-size: 2rem !important; }
+  .card-info { padding: 0.45rem 0.55rem; }
+  .card-title { font-size: 0.7rem; }
+  .card-sub   { font-size: 0.62rem; }
+  .card-play  { width: 36px; height: 36px; font-size: 0.9rem; }
 
   /* Top 10 */
-  .top10-card { width: 120px; }
-  .top10-img { height: 85px; }
-  .top10-num { font-size: 4.5rem; }
+  .top10-card { width: 115px; }
+  .top10-img  { height: 82px; font-size: 1.6rem; }
+  .top10-num  { font-size: 4rem; bottom: -4px; left: -8px; }
 
   /* Modal recuerdo */
-  .modal { width: 96%; border-radius: 10px; }
-  .modal-hero { height: 200px; }
-  .modal-body { padding: 1rem 1.2rem 1.5rem; }
-  .modal-title { font-size: 1.3rem; }
-  .modal-video-area { height: 140px; }
-  .modal-actions { flex-wrap: wrap; }
-  .modal-actions .btn { flex: 1; justify-content: center; font-size: 0.8rem; padding: 0.6rem 0.5rem; }
+  .modal-overlay { padding: 0.5rem; }
+  .modal { width: 100%; border-radius: 10px; }
+  .modal-hero { height: 190px; }
+  .modal-body { padding: 1rem 1.1rem 1.4rem; }
+  .modal-title { font-size: 1.25rem; }
+  .modal-meta  { font-size: 0.75rem; flex-wrap: wrap; gap: 0.5rem; }
+  .modal-video-area { height: 130px; font-size: 0.78rem; }
+  .modal-actions { flex-wrap: wrap; gap: 0.5rem; }
+  .modal-actions .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+    font-size: 0.78rem;
+    padding: 0.55rem 0.5rem;
+    min-width: 80px;
+  }
+
+  /* Modal fecha */
+  .date-modal { padding: 1.5rem; }
+  .date-modal h3 { font-size: 1.2rem; }
+
+  /* Upload modal */
+  #upload-modal { padding: 0; align-items: flex-end; }
+  .um-box { border-radius: 14px 14px 0 0; max-height: 92vh; }
+  .um-header { padding: 1.1rem 1.3rem 0.8rem; }
+  .um-header h3 { font-size: 1.1rem; }
+  .um-body { padding: 1rem 1.3rem 1.4rem; }
+  .um-input, .um-textarea, .um-select { font-size: 0.88rem; padding: 0.6rem 0.8rem; }
+  .um-nav .btn { font-size: 0.82rem; padding: 0.55rem 1.1rem; }
 
   /* Footer */
-  footer { padding: 2rem 5%; }
-  footer .footer-logo { font-size: 1.1rem; }
-  footer p { font-size: 0.75rem; }
+  footer { padding: 1.8rem 4%; margin-top: 2.5rem; }
+  footer .footer-logo { font-size: 1.1rem; margin-bottom: 0.8rem; }
+  footer p { font-size: 0.73rem; }
 }
 
-/* ── Celulares medianos / iPhone estándar (481px – 768px) ── */
+/* ── iPhone estándar / Plus (481px – 768px) ── */
 @media (min-width: 481px) and (max-width: 768px) {
 
   nav { padding: 0 4%; height: 60px; }
   .nav-links { display: none; }
   .nav-logo { font-size: 1.5rem; }
 
-  .hero { height: 88vh; }
-  .hero-title { font-size: 2.2rem; }
-  .hero-description { font-size: 0.92rem; }
-  .hero-buttons { flex-direction: column; gap: 0.8rem; }
-  .hero-buttons .btn { width: 80%; justify-content: center; }
+  .hero { height: auto; min-height: unset; padding: 100px 0 50px; }
+  .hero-content { padding: 0 5%; max-width: 100%; }
+  .hero-title { font-size: 2.1rem; }
+  .hero-description { font-size: 0.9rem; }
 
-  .counter-section { flex-direction: column; text-align: center; padding: 1.8rem; gap: 1.5rem; }
+  /* Botones en fila */
+  .hero-buttons { flex-direction: row; flex-wrap: wrap; gap: 0.6rem; }
+  .hero-buttons .btn {
+    width: auto !important;
+    flex: 0 0 auto;
+    font-size: 0.88rem;
+    padding: 0.65rem 1.3rem;
+  }
+
+  .counter-section { flex-direction: column; text-align: center; padding: 1.8rem; gap: 1.4rem; }
   .counter-digits { justify-content: center; }
-  .counter-num { font-size: 2.8rem; min-width: 65px; }
+  .counter-num { font-size: 2.6rem; min-width: 62px; }
 
-  .memory-banner { flex-direction: column; padding: 1.8rem; }
+  .memory-banner { flex-direction: column; padding: 1.6rem; }
   .memory-banner-actions { flex-direction: row; }
   .memory-banner-actions .btn { flex: 1; justify-content: center; }
 
-  .card { width: 155px; }
-  .card-thumb-placeholder { height: 100px; }
+  .card { width: 148px; }
+  .card-thumb-placeholder { height: 96px; }
 
-  .top10-card { width: 135px; }
-  .top10-img { height: 95px; }
-  .top10-num { font-size: 5rem; }
+  .top10-card { width: 130px; }
+  .top10-img  { height: 92px; }
+  .top10-num  { font-size: 4.8rem; }
 
-  .modal { width: 94%; }
-  .modal-hero { height: 230px; }
+  .modal { width: 95%; }
+  .modal-hero { height: 220px; }
+  .modal-actions .btn { font-size: 0.85rem; }
+
+  #upload-modal { padding: 0; align-items: flex-end; }
+  .um-box { border-radius: 14px 14px 0 0; }
 }
 
 /* ── Tablets (769px – 1024px) ── */
@@ -896,17 +959,16 @@ footer p { line-height: 1.8; }
   .hero-title { font-size: 3rem; }
   .hero-content { max-width: 520px; }
 
-  .counter-section { padding: 2rem; }
-  .counter-num { font-size: 3.5rem; min-width: 70px; }
+  .counter-num { font-size: 3.4rem; min-width: 68px; }
 
-  .card { width: 175px; }
-  .card-thumb-placeholder { height: 108px; }
+  .card { width: 172px; }
+  .card-thumb-placeholder { height: 106px; }
 
-  .top10-card { width: 150px; }
-  .top10-img { height: 105px; }
+  .top10-card { width: 148px; }
+  .top10-img  { height: 103px; }
 }
 
-/* ── iOS safe area (notch / Dynamic Island / barra inferior) ── */
+/* ── iOS safe area (notch / Dynamic Island) ── */
 @supports (padding: max(0px)) {
   nav {
     padding-left:  max(4%, env(safe-area-inset-left));
@@ -914,7 +976,7 @@ footer p { line-height: 1.8; }
     padding-top:   env(safe-area-inset-top);
   }
   footer {
-    padding-bottom: max(3rem, env(safe-area-inset-bottom));
+    padding-bottom: max(2rem, env(safe-area-inset-bottom));
   }
   #upload-modal,
   .modal-overlay,
