@@ -51,6 +51,20 @@ function attemptLogin(username, password) {
 
 function logout() {
   clearSession();
+  // Resetear avatar
+  const avatar = document.querySelector('.nav-avatar');
+  if (avatar) {
+    avatar.textContent  = '💑';
+    avatar.title        = 'Iniciar sesión';
+    avatar.style.cursor = 'pointer';
+    avatar.onclick      = () => showLoginScreen();
+  }
+  // Mostrar banner y botón de subida por si acaso
+  const uploadBtn = document.querySelector('[onclick="openUploadModal()"]');
+  if (uploadBtn) uploadBtn.style.display = 'none';
+  const memoryBanner = document.querySelector('.memory-banner');
+  if (memoryBanner) memoryBanner.style.display = 'none';
+
   showLoginScreen();
 }
 
@@ -239,7 +253,7 @@ function toggleAvatarMenu(type, session) {
       </style>
       <div class="av-menu-header">
         <div class="av-menu-name">👀 Invitado</div>
-        <div class="av-menu-role">Solo lectura</div>
+        <div class="av-menu-role">Solo visualización</div>
       </div>
       <button class="av-menu-item" onclick="closeAvatarMenu();clearSession();showLoginScreen()">
         🔐 Iniciar sesión
@@ -292,10 +306,14 @@ function handleLoginSubmit() {
   setTimeout(() => {
     const result = attemptLogin(username, password);
     if (result.ok) {
-      btn.textContent = '♥';
+      btn.textContent  = '♥';
+      btn.disabled     = false;
       errEl.style.display = 'none';
       applySession(result.user);
-      setTimeout(() => hideLoginScreen(), 400);
+      setTimeout(() => {
+        hideLoginScreen();
+        btn.textContent = 'Entrar'; // ← resetea el botón para la próxima vez
+      }, 400);
     } else {
       btn.disabled    = false;
       btn.textContent = 'Entrar';
