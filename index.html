@@ -3,15 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Nuestros Recuerdos ♥</title>
+  <title>Nuestros Recuerdos </title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>❤️</text></svg>" />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/css/styles.css" />
   <link rel="stylesheet" href="assets/css/intro.css" />
   <link rel="stylesheet" href="assets/css/upload.css" />
   <link rel="stylesheet" href="assets/css/login.css" />
-  <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-  <script>eruda.init();</script>
+  <link rel="stylesheet" href="assets/css/cascade.css" />
 </head>
 <body>
 
@@ -24,7 +23,7 @@
     <div class="login-box">
       <div class="login-logo">
         <span class="login-logo-hearts">💖</span>
-        <div class="login-logo-text">Nuestros<span>♥</span>Recuerdos</div>
+        <div class="login-logo-text">Nuestros<span> ♥ </span>Recuerdos</div>
       </div>
       <h2 class="login-title">Bienvenido/a</h2>
       <p class="login-subtitle">Solo para los dos 🌹</p>
@@ -48,7 +47,7 @@
         transition:border-color 0.2s, color 0.2s; letter-spacing:0.3px;"
         onmouseover="this.style.borderColor='#555';this.style.color='#aaa'"
         onmouseout="this.style.borderColor='#2a2a2a';this.style.color='#666'">
-        👀 Entrar como invitado
+        Entrar como invitado 👀
       </button>
       <div class="login-hint">
         <div class="login-hint-user" onclick="document.getElementById('login-input-user').value='KerllyV';document.getElementById('login-input-user').focus()">
@@ -66,7 +65,7 @@
        NAVBAR
   ═══════════════════════════════════ -->
   <nav id="navbar">
-    <a class="nav-logo" href="#">Nuestros<span>♥</span>Recuerdos</a>
+    <a class="nav-logo" href="#">Nuestros<span> ♥ </span>Recuerdos</a>
     <ul class="nav-links">
       <li><a href="#">Inicio</a></li>
       <li><a href="#c1">Recientes</a></li>
@@ -75,7 +74,6 @@
       <li><a href="#c6">En Casa</a></li>
     </ul>
     <div class="nav-right">
-      <span class="nav-icon" title="Buscar">🔍</span>
       <span class="nav-icon" title="Notificaciones">🔔</span>
       <div class="nav-avatar" title="Nosotros">💑</div>
     </div>
@@ -89,25 +87,22 @@
     <div class="hero-bg"></div>
     <div class="hero-content">
       <span class="hero-badge">💫 Recuerdo del Día</span>
-      <h1 class="hero-title">La Primera Vez que <em>te Vi</em></h1>
+      <h1 class="hero-title">La Primera Vez que <em>Te Vi</em></h1>
       <div class="hero-meta">
         <span class="match">💖 99% Amor</span>
-        <span class="year">2025</span>
+        <span class="year">04-12-2025</span>
         <span class="hearts">♥♥♥♥♥</span>
       </div>
       <p class="hero-description">
-        Ese momento mágico donde todo cambió. La luz, tu sonrisa, esa sensación
-        de que algo increíble estaba por comenzar. Un recuerdo que vale para toda la vida.
+        Ese momento mágico donde todo cambió...
       </p>
       <div class="hero-buttons">
-        <button class="btn btn-play"
-          onclick="openModal({title:'Primera Vez que te Vi', emoji:'💫', gradient:'linear-gradient(135deg,#4a0015,#c0396e)', desc:'El día que todo comenzó. Recuerda ese momento especial que marcó el inicio de nuestra historia.', image:'', video:''})">
-          ▶ Reproducir
-        </button>
-        <button class="btn btn-info"
-          onclick="openModal({title:'Primera Vez que te Vi', emoji:'💫', gradient:'linear-gradient(135deg,#4a0015,#c0396e)', desc:'El día que todo comenzó. Recuerda ese momento especial que marcó el inicio de nuestra historia.', image:'', video:''})">
-          ℹ Más Info
-        </button>
+        <button class="btn btn-play" onclick="openModal(HERO)">
+  ▶ Reproducir
+</button>
+<button class="btn btn-info" onclick="openModal(HERO)">
+  ℹ Más Info
+</button>
         <button class="btn btn-red" onclick="addHeart(event)">
           ♥ Añadir a Mi Lista
         </button>
@@ -217,9 +212,9 @@
        FOOTER
   ═══════════════════════════════════ -->
   <footer>
-    <span class="footer-logo">Nuestros♥Recuerdos</span>
-    <p>Hecho con <span class="footer-heart">♥</span> para ti · Cada momento contigo vale para siempre</p>
-    <p style="margin-top:0.5rem; color:#333;">© 2025 — Solo para los dos</p>
+    <span class="footer-logo">Nuestros ♥ Recuerdos</span>
+    <p>Hecho con <span class="footer-heart"> ♥ </span> para ti · Cada momento contigo vale para siempre y deseo tenerlos por mucho tiempo.</p>
+    <p style="margin-top:0.5rem; color:#333;">© 2025 — Solo para los dos c: </p>
   </footer>
 
 
@@ -427,9 +422,9 @@
   ═══════════════════════════════════ -->
   <script src="assets/js/intro.js"></script>
   <script src="assets/js/data.js"></script>
-  <script src="assets/js/app.js"></script>
   <script src="assets/js/upload.js"></script>
   <script src="assets/js/auth.js"></script>
+  <script src="assets/js/app.js"></script>
 
   <script>
     /* ── Modales con IDs fijos para openModal ── */

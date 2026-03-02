@@ -21,10 +21,11 @@ const HERO = {
   title:       "La Primera Vez que te Vi",
   titleEm:     "te Vi",
   match:       "💖 99% Amor",
-  year:        "2025",
-  description: "Ese momento mágico donde todo cambió. La luz, tu sonrisa, esa sensación de que algo increíble estaba por comenzar. Un recuerdo que vale para toda la vida.",
+  year:        "04-12-2025",
+  description: "Ese día te vi y me pareciste muy linda, la luz, tu sonrisa, esa sensación de que algo increíble podríamos vivir y estaba por comenzar. Un recuerdo que siempre tendré en cuenta para toda la vida. Te amo mucho mi amor y siempre lo haré. Gracias por ser parte de mi vida y por hacerme tan feliz. Eres lo mejor que me ha pasado y espero seguir creando recuerdos juntos por siempre.",
   image:       "https://res.cloudinary.com/dwtqq0c7y/image/upload/v1772377096/Home.jpg",   // ← cambia por tu foto
-  video:       "https://player.cloudinary.com/embed/?cloud_name=dwtqq0c7y&public_id=nuestros-recuerdos%2Fprimer_beso_gtqmc4",         // ← o pon tu video
+  // video:       "https://res.cloudinary.com/dwtqq0c7y/image/upload/v1772422604/gn1gzjytcvixlhnzblik.jpg",   
+  desc:        "Sigo pensando que tengo mucha suerte por haberte conocido, aunque me hayas quitado mi botellita, quien lo diria que por eso empezaria todo, aunque ni me hayas tenido agregado 😒 siento que ese fue un dia muy bonito, a pesar de todo lo malo que paso antes de verte pero de todas maneras... Gracias por existir y por ser parte de mi vida, no olvidare esa fecha. Te amo. ♥",
 };
 
 const SECTIONS = [
@@ -94,15 +95,4 @@ const SECTIONS = [
   },
 ];
 
-const TOP10 = [
-  { title: "Primera Cita",     emoji: "🌹", gradient: "linear-gradient(135deg,#4a0015,#c0396e)" },
-  { title: "Primer Beso",      emoji: "💋", gradient: "linear-gradient(135deg,#1a0030,#7b2d9e)" },
-  { title: "Playa & Atardecer",emoji: "🏖️", gradient: "linear-gradient(135deg,#002040,#e5840e)" },
-  { title: "Aniversario",      emoji: "💍", gradient: "linear-gradient(135deg,#1a0a0a,#c03060)" },
-  { title: "Viaje Juntos",     emoji: "✈️", gradient: "linear-gradient(135deg,#1a1000,#c0800e)" },
-  { title: "San Valentín",     emoji: "💝", gradient: "linear-gradient(135deg,#2a0010,#e03060)" },
-  { title: "La Sorpresa",      emoji: "🎁", gradient: "linear-gradient(135deg,#1a0a0a,#8b0000)" },
-  { title: "El Concierto",     emoji: "🎵", gradient: "linear-gradient(135deg,#0a0a2a,#4040c0)" },
-  { title: "Navidad",          emoji: "🎄", gradient: "linear-gradient(135deg,#001a00,#206040)" },
-  { title: "Año Nuevo",        emoji: "🎆", gradient: "linear-gradient(135deg,#1a1a00,#c09000)" },
-];
+const TOP10 = [];

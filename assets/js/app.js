@@ -176,17 +176,64 @@ function renderTop10() {
   const container = document.getElementById('c3');
   if (!container) return;
 
-  TOP10.forEach((m, i) => {
+  const session = (typeof getSession === 'function') ? getSession() : null;
+  const isGuest = session?.guest === true;
+
+  // Ocultar sección completa para invitados o no logueados
+  const section = container.closest('.section');
+  if (!session || isGuest) {
+    if (section) section.style.display = 'none';
+    return;
+  }
+
+  // Mostrar sección para usuarios logueados
+  if (section) section.style.display = '';
+
+  const favs  = JSON.parse(localStorage.getItem(`favs_${session.username}`) || '[]');
+  const top10 = favs.slice(0, 10);
+
+  container.innerHTML = '';
+
+  if (top10.length === 0) {
+    container.innerHTML = `
+      <div style="padding:2rem 0;color:#444;font-family:'Lato',sans-serif;
+        font-size:0.85rem;text-align:center;width:100%;">
+        💔 Aún no tienes favoritos — dale ♥ Me Encanta a tus recuerdos favoritos
+      </div>`;
+    return;
+  }
+
+  top10.forEach((m, i) => {
     const card = document.createElement('div');
     card.className = 'top10-card';
+
+    let thumbHTML = '';
+    if (m.image) {
+      thumbHTML = `<img src="${m.image}"
+        style="width:100%;height:110px;object-fit:cover;border-radius:6px;display:block;"/>`;
+    } else if (m.video) {
+      const cloudName   = (typeof CLOUDINARY_CLOUD !== 'undefined') ? CLOUDINARY_CLOUD : '';
+      const afterUpload = m.video.split('/upload/')[1] || '';
+      const pubId       = afterUpload.replace(/^v\d+\//, '').replace(/\.[^/.]+$/, '');
+      const thumbUrl    = `https://res.cloudinary.com/${cloudName}/video/upload/w_300,h_180,c_fill,so_2/${pubId}.jpg`;
+      thumbHTML = `
+        <div style="position:relative;width:100%;height:110px;border-radius:6px;overflow:hidden;">
+          <img src="${thumbUrl}"
+               style="width:100%;height:100%;object-fit:cover;display:block;"
+               onerror="this.parentElement.style.background='${m.gradient}';this.style.display='none'"/>
+        </div>`;
+    } else {
+      thumbHTML = `<div class="top10-img" style="background:${m.gradient}">${m.emoji}</div>`;
+    }
+
     card.innerHTML = `
-      <div class="top10-img" style="background:${m.gradient}">${m.emoji}</div>
+      ${thumbHTML}
       <div class="top10-num">${i + 1}</div>
     `;
     card.onclick = () => openModal({
       ...m,
-      sub:  `Top ${i + 1} de nuestros favoritos`,
-      desc: `Un recuerdo que merece estar en el top 10. Único e irrepetible.`,
+      sub:  `Top ${i + 1} de tus favoritos`,
+      desc: m.desc || m.sub || 'Un recuerdo que merece estar en el top 10.',
     });
     container.appendChild(card);
   });
@@ -448,11 +495,21 @@ function initOutsideClose() {
 }
 
 /* ─── INIT ─── */
-document.addEventListener('DOMContentLoaded', () => {
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    renderHero();
+    renderCarousels();
+    renderTop10();
+    updateCounter();
+    initNavbar();
+    initOutsideClose();
+  });
+} else {
+  // DOM ya cargó — ejecutar directo
   renderHero();
   renderCarousels();
   renderTop10();
   updateCounter();
   initNavbar();
   initOutsideClose();
-});
+}

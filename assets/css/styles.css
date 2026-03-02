@@ -125,8 +125,8 @@ nav.scrolled {
 .hero-content {
   position: relative;
   z-index: 2;
-  padding: 0 4%;
-  max-width: 650px;
+  padding: 0 4% 0 6%;
+  max-width: 55%;
   animation: heroFadeIn 1.2s ease forwards;
 }
 
@@ -179,6 +179,9 @@ nav.scrolled {
   margin-bottom: 2rem;
   font-weight: 300;
   text-shadow: 1px 1px 8px rgba(0,0,0,0.8);
+  overflow: visible;
+  display: block;
+  max-width: 600px;
 }
 
 .hero-buttons {
@@ -244,6 +247,7 @@ nav.scrolled {
    CONTADOR DE DÍAS
 ════════════════════════ */
 .counter-section {
+  min-height: 120px;
   margin: 0.5rem 4% 2.5rem;
   padding: 2.5rem;
   border-radius: 12px;
@@ -986,4 +990,9 @@ footer p { line-height: 1.8; }
   .hero-content { max-width: 750px; }
   .card { width: 220px; }
   .card-thumb-placeholder { height: 130px; }
+}
+
+/* ── Fix scroll con navbar fija ── */
+html {
+  scroll-padding-top: 120px;
 }

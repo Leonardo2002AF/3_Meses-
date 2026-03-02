@@ -4,24 +4,19 @@
 
 (function () {
 
-  /* ── Duración total antes de ocultar el intro ── */
-  const INTRO_DURATION = 2200; // ms  (ajusta si quieres más o menos tiempo)
-  const SKIP_AFTER_SEEN = false; // true = salta el intro si ya se vio hoy
+  const SKIP_AFTER_SEEN = false;
 
-  /* ── ¿Ya lo vio hoy? ── */
   function alreadySeen() {
     if (!SKIP_AFTER_SEEN) return false;
     const last = localStorage.getItem('introLastSeen');
     if (!last) return false;
-    const today = new Date().toDateString();
-    return last === today;
+    return last === new Date().toDateString();
   }
 
   function markSeen() {
     localStorage.setItem('introLastSeen', new Date().toDateString());
   }
 
-  /* ── Elimina el overlay y libera la página ── */
   function hideIntro() {
     const overlay = document.getElementById('intro-overlay');
     if (!overlay) return;
@@ -36,55 +31,50 @@
     markSeen();
   }
 
-  /* ── Construye e inyecta el HTML del intro ── */
   function buildIntro() {
     const overlay = document.createElement('div');
     overlay.id = 'intro-overlay';
 
     overlay.innerHTML = `
       <div class="intro-symbol">
-
-        <!-- Ondas de pulso -->
         <div class="intro-pulse"></div>
         <div class="intro-pulse"></div>
         <div class="intro-pulse"></div>
-
-        <!-- Resplandor rojo -->
         <div class="intro-glow"></div>
-
-        <!-- Logo SVG: corazón con letra N dentro -->
         <img src="assets/images/N Logo.svg" class="intro-logo-svg" alt="N" />
-
-        <!-- Barra inferior -->
         <div class="intro-bar"></div>
-
-        <!-- Efecto de luz -->
         <div class="intro-shine"></div>
-
-        <!-- Nombre de la página -->
         <div class="intro-text">Nuestros Recuerdos</div>
-
       </div>
     `;
 
-    /* Clic para saltar manualmente */
     overlay.addEventListener('click', hideIntro);
-
     document.body.appendChild(overlay);
     document.body.classList.add('intro-active');
   }
 
-  /* ── Punto de entrada ── */
   function init() {
-    if (alreadySeen()) return; // no mostrar si ya se vio hoy
+    if (alreadySeen()) return;
 
     buildIntro();
 
-    /* Ocultar automáticamente después de INTRO_DURATION */
-    setTimeout(hideIntro, INTRO_DURATION);
+    // Fase 1: aparece y hace pulso (0 - 1800ms)
+    // Fase 2: zoom hacia adelante (1800 - 2600ms)
+    // Fase 3: fade out del overlay (2600ms+)
+    setTimeout(() => {
+      const logo = document.querySelector('.intro-logo-svg');
+      const glow = document.querySelector('.intro-glow');
+      const text = document.querySelector('.intro-text');
+      const bar  = document.querySelector('.intro-bar');
+      if (logo) logo.classList.add('intro-zoom-out');
+      if (glow) glow.classList.add('intro-zoom-out');
+      if (text) text.style.opacity = '0';
+      if (bar)  bar.style.opacity  = '0';
+    }, 1800);
+
+    setTimeout(hideIntro, 2600);
   }
 
-  /* Ejecutar tan pronto como el DOM esté listo */
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {

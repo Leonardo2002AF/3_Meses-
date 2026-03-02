@@ -85,6 +85,8 @@ function hideLoginScreen() {
   setTimeout(() => {
     overlay.classList.remove('active', 'hiding');
     document.body.style.overflow = '';
+    // ← Cascada corre AQUÍ, cuando el login ya desapareció
+    runCascadeAnimation();
   }, 600);
 }
 
@@ -126,6 +128,11 @@ function applySession(session) {
     avatar.style.cursor = 'pointer';
     avatar.onclick      = () => showLoginScreen();
   }
+  // Al final de applySession(), forzar el contador
+    setTimeout(() => {
+      if (typeof updateCounter === 'function') updateCounter();
+    }, 100);
+    if (typeof renderTop10 === 'function') renderTop10();
 }
 
 /* ════════════════════
@@ -446,3 +453,31 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+function runCascadeAnimation() {
+  const elements = [
+    document.getElementById('navbar'),
+    document.querySelector('.hero'),
+    document.getElementById('counter-section'),
+    document.querySelector('.memory-banner'),
+    ...Array.from(document.querySelectorAll('.section')),
+    document.querySelector('footer'),
+  ].filter(Boolean);
+
+  // Ocultar todo primero
+  elements.forEach(el => {
+    el.style.opacity   = '0';
+    el.style.transform = 'translateY(-20px)';
+    el.style.transition = 'none'; // sin transición al ocultar
+  });
+
+  // Pequeña pausa para que el browser pinte el estado oculto
+  setTimeout(() => {
+    elements.forEach((el, i) => {
+      setTimeout(() => {
+        el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+        el.style.opacity    = '1';
+        el.style.transform  = 'translateY(0)';
+      }, i * 150);
+    });
+  }, 50);
+}

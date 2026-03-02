@@ -2,7 +2,6 @@
    INTRO ANIMATION — Estilo Netflix
    ══════════════════════════════════════════ */
 
-/* Bloquea el scroll mientras el intro está activo */
 body.intro-active {
   overflow: hidden;
 }
@@ -16,8 +15,7 @@ body.intro-active {
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Fade out final del overlay completo */
-  transition: opacity 0.6s ease;
+  transition: opacity 0.5s ease;
 }
 
 #intro-overlay.fade-out {
@@ -33,14 +31,15 @@ body.intro-active {
   justify-content: center;
 }
 
-/* ─── LA "N" / CORAZÓN SVG ─── */
+/* ─── LA "N" / LOGO SVG ─── */
 .intro-logo-svg {
   width: 120px;
   height: 120px;
-  /* Empieza invisible */
   opacity: 0;
   transform: scale(0.6);
   animation: introLogoAppear 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.2s forwards;
+  position: relative;
+  z-index: 2;
 }
 
 @keyframes introLogoAppear {
@@ -50,7 +49,27 @@ body.intro-active {
   }
 }
 
-/* ─── BARRA DE LUZ (efecto sello de Netflix) ─── */
+/* ─── ZOOM HACIA ADELANTE — fase final ─── */
+.intro-logo-svg.intro-zoom-out {
+  animation: introZoomFront 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+}
+
+.intro-glow.intro-zoom-out {
+  animation: introGlowZoom 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+}
+
+@keyframes introZoomFront {
+  0%   { transform: scale(1);    opacity: 1; }
+  60%  { transform: scale(8);    opacity: 1; }
+  100% { transform: scale(20);   opacity: 0; }
+}
+
+@keyframes introGlowZoom {
+  0%   { opacity: 1; transform: scale(1.4); }
+  100% { opacity: 0; transform: scale(6);   }
+}
+
+/* ─── BARRA DE LUZ ─── */
 .intro-shine {
   position: absolute;
   top: 0;
@@ -73,7 +92,7 @@ body.intro-active {
   100% { left: 120%;  opacity: 0; }
 }
 
-/* ─── RESPLANDOR ROJO DETRÁS ─── */
+/* ─── RESPLANDOR ROJO ─── */
 .intro-glow {
   position: absolute;
   width: 200px;
@@ -93,7 +112,7 @@ body.intro-active {
   }
 }
 
-/* ─── LÍNEA INFERIOR (igual que Netflix) ─── */
+/* ─── LÍNEA INFERIOR ─── */
 .intro-bar {
   position: absolute;
   bottom: -18px;
@@ -105,13 +124,14 @@ body.intro-active {
   border-radius: 2px;
   transform-origin: center;
   animation: introBar 0.4s ease-out 0.65s forwards;
+  transition: opacity 0.3s ease;
 }
 
 @keyframes introBar {
   to { transform: translateX(-50%) scaleX(1); }
 }
 
-/* ─── TEXTO "Nuestros Recuerdos" ─── */
+/* ─── TEXTO ─── */
 .intro-text {
   position: absolute;
   bottom: -52px;
@@ -124,6 +144,7 @@ body.intro-active {
   letter-spacing: 4px;
   color: white;
   opacity: 0;
+  transition: opacity 0.3s ease;
   animation: introText 0.6s ease-out 0.9s forwards;
 }
 
