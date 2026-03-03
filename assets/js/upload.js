@@ -213,6 +213,10 @@ async function startUpload() {
     saveToLocalStorage(category, card);
     addCardToCarousel(category, card);
     showUploadSuccess(title);
+    const session = (typeof getSession === 'function') ? getSession() : null;
+    if (session && !session.guest && typeof saveNotification === 'function') {
+      saveNotification(card, session.username);
+    }
     setUploadStep(4);
 
     setTimeout(() => loadSavedCards(), 3000);

@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Nuestros Recuerdos </title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script> 
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>❤️</text></svg>" />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/css/styles.css" />
@@ -426,11 +428,12 @@
   <!-- ══════════════════════════════════
        SCRIPTS
   ═══════════════════════════════════ -->
-  <script src="assets/js/auth.js"></script>    <!-- Primero auth.js para getSession -->
-  <script src="assets/js/data.js"></script>    <!-- Segundo data.js para HERO y SECTIONS -->
-  <script src="assets/js/intro.js"></script>   <!-- Luego intro.js si es necesario -->
-  <script src="assets/js/app.js"></script>      <!-- app.js después de sus dependencias -->
-  <script src="assets/js/upload.js"></script>   <!-- upload.js al final -->
+  <script src="assets/js/intro.js"></script>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/upload.js"></script>
+  <script src="assets/js/notifications.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/app.js"></script> <!-- upload.js al final -->
 
   <script>
     /* ── Modales con IDs fijos para openModal ── */
