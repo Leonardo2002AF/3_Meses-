@@ -72,6 +72,10 @@ function resetUploadModal() {
   const descInput = document.getElementById('um-desc');
   if (descInput) descInput.value = '';
 
+  // Limpiar campo fecha
+  const fechaInput = document.getElementById('um-fecha');
+  if (fechaInput) fechaInput.value = '';
+
   setUploadStep(1);
 }
 
@@ -157,9 +161,19 @@ async function startUpload() {
   const desc     = document.getElementById('um-desc').value.trim();
   const emoji    = document.getElementById('um-emoji').value || '📸';
   const category = document.getElementById('um-category').value;
+  const fechaRaw = document.getElementById('um-fecha')?.value || '';
 
   if (!uploadState.file) { showUploadError('Primero elige un archivo.');           return; }
   if (!title)             { showUploadError('Escribe un título para el recuerdo.'); return; }
+
+  // Formatear fecha para mostrar: "07 Enero 2025"
+  let fechaFormateada = '';
+  if (fechaRaw) {
+    const [y, m, d] = fechaRaw.split('-');
+    const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio',
+                   'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    fechaFormateada = `${d} ${meses[parseInt(m) - 1]} ${y}`;
+  }
 
   setUploadStep(3);
   showProgress(0);
@@ -174,10 +188,10 @@ async function startUpload() {
     `category=${category}`,
     `gradient=${encodeURIComponent(gradient)}`,
     `type=${uploadState.type}`,
+    `fecha=${encodeURIComponent(fechaFormateada)}`,
   ].join('|');
 
   try {
-    // ✅ category se pasa a uploadToCloudinary para el tag compartido
     const url = await uploadToCloudinary(
       uploadState.file,
       contextStr,
@@ -191,6 +205,7 @@ async function startUpload() {
       sub:      desc || title,
       desc:     desc || `Un recuerdo especial: ${title}`,
       gradient,
+      fecha:    fechaFormateada,
       image:    uploadState.type === 'image' ? url : '',
       video:    uploadState.type === 'video' ? url : '',
     };
@@ -200,7 +215,6 @@ async function startUpload() {
     showUploadSuccess(title);
     setUploadStep(4);
 
-    // Recargar desde Cloudinary tras 3s para sincronizar otros dispositivos
     setTimeout(() => loadSavedCards(), 3000);
 
   } catch (err) {
@@ -212,8 +226,6 @@ async function startUpload() {
 
 /* ════════════════════
    UPLOAD A CLOUDINARY
-   ✅ Tag "nuestros-recuerdos" = compartido
-   ✅ Tag "cat_xx" = categoría del carrusel
 ════════════════════ */
 function uploadToCloudinary(file, contextStr, category, onProgress) {
   return new Promise((resolve, reject) => {
@@ -222,7 +234,6 @@ function uploadToCloudinary(file, contextStr, category, onProgress) {
     form.append('upload_preset', CLOUDINARY_PRESET);
     form.append('folder',        'nuestros-recuerdos');
     form.append('context',       contextStr);
-    // ✅ Tag global para que aparezca en TODOS los dispositivos
     form.append('tags', `recuerdos,cat_${category || 'c1'}`);
 
     const resourceType = file.type.startsWith('video/') ? 'video' : 'image';
@@ -269,9 +280,6 @@ function saveToLocalStorage(categoryId, card) {
 
 /* ════════════════════
    CARGAR DESDE CLOUDINARY
-   ✅ Imágenes y videos compartidos
-   ✅ Categoría desde context o tag
-   ✅ Cache busting para ver siempre lo nuevo
 ════════════════════ */
 async function loadSavedCards() {
   let loaded = false;
@@ -279,9 +287,9 @@ async function loadSavedCards() {
 
   try {
     const [imgRes, vidRes] = await Promise.all([
-        fetch(`https://res.cloudinary.com/${CLOUDINARY_CLOUD}/image/list/recuerdos.json${bust}`),
-        fetch(`https://res.cloudinary.com/${CLOUDINARY_CLOUD}/video/list/recuerdos.json${bust}`),
-      ]);
+      fetch(`https://res.cloudinary.com/${CLOUDINARY_CLOUD}/image/list/recuerdos.json${bust}`),
+      fetch(`https://res.cloudinary.com/${CLOUDINARY_CLOUD}/video/list/recuerdos.json${bust}`),
+    ]);
 
     const imgData = imgRes.ok ? await imgRes.json() : { resources: [] };
     const vidData = vidRes.ok ? await vidRes.json() : { resources: [] };
@@ -306,18 +314,17 @@ async function loadSavedCards() {
       all.forEach(r => {
         const ctx = r.context?.custom || {};
 
-        // ✅ Categoría desde context, si no desde tag cat_xx
         const tagCat   = (r.tags || []).find(t => t.startsWith('cat_'));
         const category = ctx.category || (tagCat ? tagCat.replace('cat_', '') : 'c1');
         const type     = ctx.type || r.resourceType || 'image';
 
         const card = {
-          // ✅ Título desde context, si no usa nombre del archivo
           title:    decodeURIComponent(ctx.title    || r.display_name || r.public_id.split('/').pop() || 'Recuerdo'),
           sub:      decodeURIComponent(ctx.sub      || ''),
           desc:     decodeURIComponent(ctx.desc     || ''),
           emoji:    decodeURIComponent(ctx.emoji    || '📸'),
           gradient: decodeURIComponent(ctx.gradient || randomGradient()),
+          fecha:    ctx.fecha ? decodeURIComponent(ctx.fecha) : '',
           image:    type === 'image' ? `https://res.cloudinary.com/${CLOUDINARY_CLOUD}/image/upload/${r.public_id}` : '',
           video:    type === 'video' ? `https://res.cloudinary.com/${CLOUDINARY_CLOUD}/video/upload/${r.public_id}` : '',
         };
@@ -332,7 +339,6 @@ async function loadSavedCards() {
     console.warn('Cloudinary list no disponible:', err);
   }
 
-  // Respaldo localStorage si Cloudinary falla
   if (!loaded) {
     try {
       const all = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
@@ -359,13 +365,13 @@ function addCardToCarousel(categoryId, card, prepend = false) {
                       style="width:100%;height:120px;object-fit:cover;"
                       onerror="this.style.display='none'">`;
   } else if (card.video) {
-    // ✅ Extrae el public_id limpio y construye el thumbnail
-    const afterUpload  = card.video.split('/upload/')[1] || '';
+    const afterUpload   = card.video.split('/upload/')[1] || '';
     const videoPublicId = afterUpload
-      .replace(/^v\d+\//, '')   // quita versión tipo v1234567/
-      .replace(/\.[^/.]+$/, ''); // quita extensión .mp4 .mov etc
+      .replace(/^v\d+\//, '')
+      .replace(/\.[^/.]+$/, '');
 
-    const thumbUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD}/video/upload/w_400,h_240,c_fill,so_2,eo_7,dl_150,e_loop/${videoPublicId}.gif`;thumbHTML = `<div style="position:relative;width:100%;height:120px;overflow:hidden;border-radius:4px 4px 0 0;">
+    const thumbUrl = `https://res.cloudinary.com/${CLOUDINARY_CLOUD}/video/upload/w_400,h_240,c_fill,so_2,eo_7,dl_150,e_loop/${videoPublicId}.gif`;
+    thumbHTML = `<div style="position:relative;width:100%;height:120px;overflow:hidden;border-radius:4px 4px 0 0;">
                    <img src="${thumbUrl}" alt="${card.title}"
                         style="width:100%;height:120px;object-fit:cover;display:block;"
                         onerror="this.parentElement.innerHTML='<div style=\\'width:100%;height:120px;background:${card.gradient};display:flex;align-items:center;justify-content:center;font-size:2rem\\'>▶</div>'"/>
@@ -397,6 +403,7 @@ function addCardToCarousel(categoryId, card, prepend = false) {
     container.prepend(el);
   }
 }
+
 /* ════════════════════
    PROGRESO
 ════════════════════ */

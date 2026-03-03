@@ -112,7 +112,6 @@ nav.scrolled {
   background:
     linear-gradient(to right, rgba(0,0,0,0.85) 40%, rgba(0,0,0,0.1) 100%),
     linear-gradient(to top,   rgba(0,0,0,0.9)  0%, transparent       50%),
-    url('../images/hero/hero.jpg') center/cover no-repeat;
   transform: scale(1.05);
   animation: heroZoom 20s ease-in-out infinite alternate;
 }
@@ -995,4 +994,20 @@ footer p { line-height: 1.8; }
 /* ── Fix scroll con navbar fija ── */
 html {
   scroll-padding-top: 120px;
+}
+/* Estilo para la fecha en las tarjetas del carrusel */
+.card-date {
+  font-size: 0.7rem;
+  color: #aaa;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-family: 'Lato', sans-serif;
+}
+
+.card-date:before {
+  content: '';
+  display: inline-block;
+  margin-right: 2px;
 }

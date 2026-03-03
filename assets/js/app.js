@@ -114,24 +114,45 @@ function saveDateAndClose() {
 
 /* ─── RENDER HERO ─── */
 function renderHero() {
+  if (typeof HERO === 'undefined') {
+    setTimeout(renderHero, 100);
+    return;
+  }
+
   const bg = document.querySelector('.hero-bg');
-  if (HERO.image && bg) bg.style.backgroundImage =
-    `linear-gradient(to right, rgba(0,0,0,0.85) 40%, rgba(0,0,0,0.1) 100%),
-     linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 50%),
-     url('${HERO.image}')`;
+  if (HERO.image && bg) {
+    bg.style.backgroundImage = `linear-gradient(to right, rgba(0,0,0,0.85) 40%, rgba(0,0,0,0.1) 100%),
+                                 linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 50%),
+                                 url('${HERO.image}')`;
+  }
 
-  document.querySelector('.hero-badge').textContent       = HERO.badge;
-  document.querySelector('.hero-meta .match').textContent = HERO.match;
-  document.querySelector('.hero-meta .year').textContent  = HERO.year;
-  document.querySelector('.hero-description').textContent = HERO.description;
+  const badgeEl = document.querySelector('.hero-badge');
+  if (badgeEl) badgeEl.textContent = HERO.badge || '💫 Recuerdo del Día';
 
-  const t = HERO.title;
-  const e = HERO.titleEm;
-  document.querySelector('.hero-title').innerHTML = t.replace(e, `<em>${e}</em>`);
+  const matchEl = document.querySelector('.hero-meta .match');
+  if (matchEl) matchEl.textContent = HERO.match || '💖 99% Amor';
+
+  const yearEl = document.querySelector('.hero-meta .year');
+  if (yearEl) yearEl.textContent = HERO.year || '';
+
+  const descEl = document.querySelector('.hero-description');
+  if (descEl) descEl.textContent = HERO.description || '';
+
+  const titleEl = document.querySelector('.hero-title');
+  if (titleEl && HERO.title) {
+    const t = HERO.title;
+    const e = HERO.titleEm || 'Te Vi';
+    titleEl.innerHTML = t.replace(e, `<em>${e}</em>`);
+  }
 }
 
 /* ─── RENDER CARRUSELES ─── */
 function renderCarousels() {
+  if (typeof SECTIONS === 'undefined') {
+    setTimeout(renderCarousels, 100);
+    return;
+  }
+
   SECTIONS.forEach(sec => {
     const container = document.getElementById(sec.id);
     if (!container) return;
@@ -151,11 +172,14 @@ function renderCarousels() {
                      </div>`;
       }
 
+      const fechaHTML = m.fecha ? `<div class="card-date">📅 ${m.fecha}</div>` : '';
+
       card.innerHTML = `
         ${thumbHTML}
         <div class="card-info">
           <div class="card-title">${m.title}</div>
           <div class="card-sub">${m.sub}</div>
+          ${fechaHTML}
         </div>
         <div class="card-overlay"><div class="card-play">▶</div></div>
       `;
@@ -173,20 +197,23 @@ function buildEmojiThumb(gradient, emoji) {
 
 /* ─── RENDER TOP 10 ─── */
 function renderTop10() {
+  if (typeof getSession !== 'function') {
+    setTimeout(renderTop10, 100);
+    return;
+  }
+
   const container = document.getElementById('c3');
   if (!container) return;
 
-  const session = (typeof getSession === 'function') ? getSession() : null;
+  const session = getSession();
   const isGuest = session?.guest === true;
 
-  // Ocultar sección completa para invitados o no logueados
   const section = container.closest('.section');
   if (!session || isGuest) {
     if (section) section.style.display = 'none';
     return;
   }
 
-  // Mostrar sección para usuarios logueados
   if (section) section.style.display = '';
 
   const favs  = JSON.parse(localStorage.getItem(`favs_${session.username}`) || '[]');
@@ -212,10 +239,10 @@ function renderTop10() {
       thumbHTML = `<img src="${m.image}"
         style="width:100%;height:110px;object-fit:cover;border-radius:6px;display:block;"/>`;
     } else if (m.video) {
-      const cloudName   = (typeof CLOUDINARY_CLOUD !== 'undefined') ? CLOUDINARY_CLOUD : '';
+      const cloudName = (typeof CLOUDINARY_CLOUD !== 'undefined') ? CLOUDINARY_CLOUD : '';
       const afterUpload = m.video.split('/upload/')[1] || '';
-      const pubId       = afterUpload.replace(/^v\d+\//, '').replace(/\.[^/.]+$/, '');
-      const thumbUrl    = `https://res.cloudinary.com/${cloudName}/video/upload/w_300,h_180,c_fill,so_2/${pubId}.jpg`;
+      const pubId = afterUpload.replace(/^v\d+\//, '').replace(/\.[^/.]+$/, '');
+      const thumbUrl = `https://res.cloudinary.com/${cloudName}/video/upload/w_300,h_180,c_fill,so_2/${pubId}.jpg`;
       thumbHTML = `
         <div style="position:relative;width:100%;height:110px;border-radius:6px;overflow:hidden;">
           <img src="${thumbUrl}"
@@ -232,7 +259,7 @@ function renderTop10() {
     `;
     card.onclick = () => openModal({
       ...m,
-      sub:  `Top ${i + 1} de tus favoritos`,
+      sub: `Top ${i + 1} de tus favoritos`,
       desc: m.desc || m.sub || 'Un recuerdo que merece estar en el top 10.',
     });
     container.appendChild(card);
@@ -241,14 +268,12 @@ function renderTop10() {
 
 /* ════════════════════
    MODAL DE RECUERDO
-   ✅ Usa IDs fijos: modal-play-btn / modal-fav-btn
 ════════════════════ */
 function openModal(card) {
-  const session  = (typeof getSession === 'function') ? getSession() : null;
-  const isGuest  = session?.guest === true;
+  const session = (typeof getSession === 'function') ? getSession() : null;
+  const isGuest = session?.guest === true;
   const username = session?.username || null;
 
-  // ── Fondo hero ──
   const heroBg = document.getElementById('modal-hero-bg');
   if (heroBg) {
     heroBg.style.background = card.image
@@ -256,19 +281,20 @@ function openModal(card) {
       : (card.gradient || 'linear-gradient(135deg,#4a0015,#c0396e)');
   }
 
-  // ── Emoji ──
   const emojiEl = document.getElementById('modal-emoji-inner');
   if (emojiEl) emojiEl.textContent = card.image ? '' : (card.emoji || '💫');
 
-  // ── Título ──
   const titleEl = document.getElementById('modal-title');
   if (titleEl) titleEl.textContent = card.title || '';
 
-  // ── Descripción ──
   const descEl = document.getElementById('modal-desc');
   if (descEl) descEl.textContent = card.desc || card.sub || '';
 
-  // ── Área multimedia ──
+  const fechaSpan = document.getElementById('modal-year');
+  if (fechaSpan) {
+    fechaSpan.textContent = card.fecha ? `📅 ${card.fecha}` : '';
+  }
+
   const mediaEl = document.getElementById('modal-media');
   if (mediaEl) {
     if (card.video) {
@@ -291,7 +317,6 @@ function openModal(card) {
     }
   }
 
-  // ── Botón REPRODUCIR — pantalla completa para videos ──
   const playBtn = document.getElementById('modal-play-btn');
   if (playBtn) {
     if (card.video) {
@@ -300,34 +325,32 @@ function openModal(card) {
         const vid = document.getElementById('modal-video-player');
         if (!vid) return;
         vid.play();
-        if      (vid.requestFullscreen)            vid.requestFullscreen();
-        else if (vid.webkitRequestFullscreen)      vid.webkitRequestFullscreen();
-        else if (vid.webkitEnterFullscreen)        vid.webkitEnterFullscreen();
+        if (vid.requestFullscreen) vid.requestFullscreen();
+        else if (vid.webkitRequestFullscreen) vid.webkitRequestFullscreen();
+        else if (vid.webkitEnterFullscreen) vid.webkitEnterFullscreen();
       };
     } else {
       playBtn.style.display = 'none';
     }
   }
 
-  // ── Botón ME ENCANTA — favoritos ──
   const favBtn = document.getElementById('modal-fav-btn');
   if (favBtn) {
     if (!isGuest && username) {
       favBtn.style.display = '';
       const favKey = `favs_${username}`;
-      const favs   = JSON.parse(localStorage.getItem(favKey) || '[]');
-      const isFav  = favs.some(f =>
+      const favs = JSON.parse(localStorage.getItem(favKey) || '[]');
+      const isFav = favs.some(f =>
         (f.image || f.video) === (card.image || card.video)
       );
-      favBtn.textContent      = isFav ? '💖 En favoritos' : '♥ Me Encanta';
+      favBtn.textContent = isFav ? '💖 En favoritos' : '♥ Me Encanta';
       favBtn.style.background = isFav ? '#c0396e' : '';
-      favBtn.onclick          = () => toggleFavorite(card, favBtn);
+      favBtn.onclick = () => toggleFavorite(card, favBtn);
     } else {
       favBtn.style.display = 'none';
     }
   }
 
-  // ── Abrir modal ──
   const overlay = document.getElementById('modal');
   if (overlay) overlay.classList.add('active');
   document.body.style.overflow = 'hidden';
@@ -343,39 +366,43 @@ function closeModal() {
    FAVORITOS
 ════════════════════ */
 function toggleFavorite(card, btn) {
-  const session = (typeof getSession === 'function') ? getSession() : null;
+  if (typeof getSession !== 'function') return;
+  
+  const session = getSession();
   if (!session || session.guest) return;
 
   const favKey = `favs_${session.username}`;
-  const favs   = JSON.parse(localStorage.getItem(favKey) || '[]');
-  const idx    = favs.findIndex(f =>
+  const favs = JSON.parse(localStorage.getItem(favKey) || '[]');
+  const idx = favs.findIndex(f =>
     (f.image || f.video) === (card.image || card.video)
   );
 
   if (idx === -1) {
     favs.push(card);
     localStorage.setItem(favKey, JSON.stringify(favs));
-    btn.textContent      = '💖 En favoritos';
+    btn.textContent = '💖 En favoritos';
     btn.style.background = '#c0396e';
     spawnHearts(null, 6);
   } else {
     favs.splice(idx, 1);
     localStorage.setItem(favKey, JSON.stringify(favs));
-    btn.textContent      = '♥ Me Encanta';
+    btn.textContent = '♥ Me Encanta';
     btn.style.background = '';
   }
 }
 
 function getFavorites() {
-  const session = (typeof getSession === 'function') ? getSession() : null;
+  if (typeof getSession !== 'function') return [];
+  
+  const session = getSession();
   if (!session || session.guest) return [];
   const favKey = `favs_${session.username}`;
   return JSON.parse(localStorage.getItem(favKey) || '[]');
 }
 
 function openFavoritesModal() {
-  const favs  = getFavorites();
-  const grid  = document.getElementById('favs-grid');
+  const favs = getFavorites();
+  const grid = document.getElementById('favs-grid');
   const empty = document.getElementById('favs-empty');
   const modal = document.getElementById('favs-modal');
   if (!grid || !empty || !modal) return;
@@ -383,10 +410,10 @@ function openFavoritesModal() {
   grid.innerHTML = '';
 
   if (favs.length === 0) {
-    grid.style.display  = 'none';
+    grid.style.display = 'none';
     empty.style.display = 'block';
   } else {
-    grid.style.display  = 'grid';
+    grid.style.display = 'grid';
     empty.style.display = 'none';
 
     favs.forEach(card => {
@@ -401,10 +428,10 @@ function openFavoritesModal() {
         thumb = `<img src="${card.image}"
                       style="width:100%;height:100px;object-fit:cover;display:block;"/>`;
       } else if (card.video) {
-        const cloudName   = (typeof CLOUDINARY_CLOUD !== 'undefined') ? CLOUDINARY_CLOUD : '';
+        const cloudName = (typeof CLOUDINARY_CLOUD !== 'undefined') ? CLOUDINARY_CLOUD : '';
         const afterUpload = card.video.split('/upload/')[1] || '';
-        const pubId       = afterUpload.replace(/^v\d+\//, '').replace(/\.[^/.]+$/, '');
-        const thumbUrl    = `https://res.cloudinary.com/${cloudName}/video/upload/w_300,h_180,c_fill,so_2/${pubId}.jpg`;
+        const pubId = afterUpload.replace(/^v\d+\//, '').replace(/\.[^/.]+$/, '');
+        const thumbUrl = `https://res.cloudinary.com/${cloudName}/video/upload/w_300,h_180,c_fill,so_2/${pubId}.jpg`;
         thumb = `
           <div style="position:relative;width:100%;height:100px;overflow:hidden;">
             <img src="${thumbUrl}"
@@ -454,18 +481,18 @@ function scrollCarousel(id, dir) {
 
 /* ─── CORAZONES FLOTANTES ─── */
 function spawnHearts(anchor, count = 6) {
-  const hearts = ['♥','💖','💗','💕','💓','❤️'];
-  const rect   = anchor
+  const hearts = ['♥', '💖', '💗', '💕', '💓', '❤️'];
+  const rect = anchor
     ? anchor.getBoundingClientRect()
     : { left: window.innerWidth / 2 - 40, top: window.innerHeight / 2, width: 80, height: 0 };
 
   for (let i = 0; i < count; i++) {
-    const h       = document.createElement('div');
-    h.className   = 'floating-heart';
+    const h = document.createElement('div');
+    h.className = 'floating-heart';
     h.textContent = hearts[Math.floor(Math.random() * hearts.length)];
     h.style.cssText = `
       left: ${rect.left + rect.width / 2 + (Math.random() - 0.5) * 80}px;
-      top:  ${rect.top  + rect.height / 2}px;
+      top: ${rect.top + rect.height / 2}px;
       font-size: ${0.8 + Math.random() * 1}rem;
       animation-delay: ${i * 0.12}s;
     `;
@@ -481,35 +508,32 @@ function addHeart(e) {
 /* ─── NAVBAR SCROLL ─── */
 function initNavbar() {
   window.addEventListener('scroll', () => {
-    document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 50);
+    const navbar = document.getElementById('navbar');
+    if (navbar) navbar.classList.toggle('scrolled', window.scrollY > 50);
   });
 }
 
 /* ─── CERRAR MODALES AL HACER CLIC AFUERA ─── */
 function initOutsideClose() {
-  const modal     = document.getElementById('modal');
-  const dateMod   = document.getElementById('date-modal');
+  const modal = document.getElementById('modal');
+  const dateMod = document.getElementById('date-modal');
 
-  if (modal)   modal.addEventListener('click',   e => { if (e.target === modal)   closeModal(); });
+  if (modal) modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
   if (dateMod) dateMod.addEventListener('click', e => { if (e.target === dateMod) closeDateModal(); });
 }
 
 /* ─── INIT ─── */
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    renderHero();
-    renderCarousels();
-    renderTop10();
-    updateCounter();
-    initNavbar();
-    initOutsideClose();
-  });
-} else {
-  // DOM ya cargó — ejecutar directo
+function initApp() {
   renderHero();
   renderCarousels();
   renderTop10();
   updateCounter();
   initNavbar();
   initOutsideClose();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  initApp();
 }

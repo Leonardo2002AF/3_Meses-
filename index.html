@@ -230,11 +230,11 @@
       </div>
       <div class="modal-body">
         <h2 class="modal-title" id="modal-title">Título</h2>
-        <div class="modal-meta">
-          <span style="color:#46d369;font-weight:700;">💖 99% Amor</span>
-          <span style="color:#aaa">2025</span>
-          <span style="color:var(--pink)">♥♥♥♥♥</span>
-        </div>
+       <div class="modal-meta">
+        <span style="color:#46d369;font-weight:700;">💖 99% Amor</span>
+        <span id="modal-year" style="color:#aaa"></span> <!-- Cambiado de "2025" a un ID -->
+        <span style="color:var(--pink)">♥♥♥♥♥</span>
+      </div>
         <div class="modal-video-area" id="modal-media">
           <span>🎬</span>
           <p>Agrega aquí tu video o foto del recuerdo</p>
@@ -300,7 +300,7 @@
             <button class="btn btn-red"  onclick="if(uploadState.file){setUploadStep(2)}else{showUploadError('Primero elige un archivo.')}">Siguiente →</button>
           </div>
         </div>
-        <div class="um-step">
+                  <div class="um-step">
           <div class="um-field">
             <label class="um-label" for="um-title">Título del recuerdo *</label>
             <input class="um-input" id="um-title" type="text" placeholder="Ej: Primera cita en el parque" maxlength="60"/>
@@ -318,6 +318,12 @@
             <label class="um-label" for="um-category">Sección</label>
             <select class="um-select" id="um-category"></select>
           </div>
+          <!-- **** NUEVO CAMPO DE FECHA **** -->
+          <div class="um-field">
+            <label class="um-label" for="um-fecha">¿Cuándo ocurrió?</label>
+            <input class="um-input" id="um-fecha" type="date" placeholder="Selecciona una fecha" />
+          </div>
+          <!-- ******************************** -->
           <div class="um-nav">
             <button class="btn btn-info" onclick="setUploadStep(1)">← Atrás</button>
             <button class="btn btn-red"  onclick="startUpload()">♥ Subir</button>
@@ -420,11 +426,11 @@
   <!-- ══════════════════════════════════
        SCRIPTS
   ═══════════════════════════════════ -->
-  <script src="assets/js/intro.js"></script>
-  <script src="assets/js/data.js"></script>
-  <script src="assets/js/upload.js"></script>
-  <script src="assets/js/auth.js"></script>
-  <script src="assets/js/app.js"></script>
+  <script src="assets/js/auth.js"></script>    <!-- Primero auth.js para getSession -->
+  <script src="assets/js/data.js"></script>    <!-- Segundo data.js para HERO y SECTIONS -->
+  <script src="assets/js/intro.js"></script>   <!-- Luego intro.js si es necesario -->
+  <script src="assets/js/app.js"></script>      <!-- app.js después de sus dependencias -->
+  <script src="assets/js/upload.js"></script>   <!-- upload.js al final -->
 
   <script>
     /* ── Modales con IDs fijos para openModal ── */

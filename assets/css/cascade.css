@@ -1,0 +1,31 @@
+/* cascade.css - Estilos adicionales para la página */
+:root {
+  --pink: #e50914;
+}
+
+/* Estilos para la fecha en tarjetas */
+.card-date {
+  font-size: 0.7rem;
+  color: #aaa;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-family: 'Lato', sans-serif;
+}
+
+/* Asegurar que las tarjetas tengan altura correcta */
+.card-thumb-placeholder {
+  width: 100%;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px 4px 0 0;
+}
+
+/* Estilos para el modal */
+#modal-year {
+  color: #aaa;
+  font-family: 'Lato', sans-serif;
+}
