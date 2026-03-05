@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="assets/css/cascade.css" />
   <link rel="stylesheet" href="assets/css/comments.css" />
   <link rel="stylesheet" href="assets/css/edit-memory.css" />
+  <link rel="stylesheet" href="assets/css/timeline.css" />
 </head>
 <body>
 
@@ -79,6 +80,7 @@
       <li><a href="#c6">En Casa</a></li>
     </ul>
     <div class="nav-right">
+      <button class="tl-nav-btn" onclick="openTimeline()" title="Ver Timeline">📅</button>
       <span class="nav-icon" title="Notificaciones">🔔</span>
       <div class="nav-avatar" title="Nosotros">💑</div>
     </div>
@@ -442,6 +444,7 @@
 <script src="assets/js/auth.js"></script>
 <script src="assets/js/app.js"></script>
 <script src="assets/js/edit-memory.js"></script>
+<script src="assets/js/timeline.js"></script>
 
   <script>
     /* ── Modales con IDs fijos para openModal ── */
@@ -533,6 +536,21 @@
     </div>
   </div>
 </div>
-
+<div id="timeline-modal">
+  <div class="tl-header">
+    <div class="tl-header-left">
+      <div>
+        <h2 class="tl-title">📅 Timeline de Recuerdos</h2>
+        <p class="tl-subtitle">Todos nuestros momentos ordenados por fecha</p>
+      </div>
+    </div>
+    <button class="tl-close" onclick="closeTimeline()">✕</button>
+  </div>
+  <div class="tl-filters">
+    <span class="tl-filter-label">Filtrar:</span>
+    <div class="tl-filter-scroll" id="tl-filter-scroll"></div>
+  </div>
+  <div class="tl-body" id="tl-body"></div>
+</div>
 </body>
 </html>
