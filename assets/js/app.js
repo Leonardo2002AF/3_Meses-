@@ -585,9 +585,11 @@ function initOutsideClose() {
 
 /* ─── PULL TO REFRESH ─── */
 function initPullToRefresh() {
-  let startY    = 0;
-  let pulling   = false;
-  const threshold = 80;
+  // No inicializar si hay un modal abierto
+  let startY   = 0;
+  let startX   = 0;
+  let pulling  = false;
+  const threshold = 90;
 
   const indicator = document.createElement('div');
   indicator.id = 'ptr-indicator';
@@ -602,7 +604,7 @@ function initPullToRefresh() {
     padding: 0.5rem 1.2rem;
     font-size: 0.85rem;
     font-family: 'Lato', sans-serif;
-    z-index: 9999;
+    z-index: 99999;
     transition: top 0.2s ease;
     pointer-events: none;
   `;
@@ -610,28 +612,37 @@ function initPullToRefresh() {
   document.body.appendChild(indicator);
 
   document.addEventListener('touchstart', (e) => {
+    // Solo activar si no hay modal abierto y estamos arriba del todo
+    const modalAbierto = document.querySelector('#modal.active, #login-overlay.active, #anniversary-overlay');
+    if (modalAbierto) return;
     if (window.scrollY === 0) {
       startY  = e.touches[0].clientY;
+      startX  = e.touches[0].clientX;
       pulling = true;
     }
   }, { passive: true });
 
   document.addEventListener('touchmove', (e) => {
     if (!pulling) return;
-    const diff = e.touches[0].clientY - startY;
-    if (diff > 10 && window.scrollY === 0) {
-      const progress = Math.min(diff, threshold * 1.5);
+    const diffY = e.touches[0].clientY - startY;
+    const diffX = Math.abs(e.touches[0].clientX - startX);
+
+    // Ignorar si es más scroll horizontal que vertical
+    if (diffX > diffY) { pulling = false; return; }
+
+    if (diffY > 10 && window.scrollY === 0) {
+      const progress = Math.min(diffY, threshold * 1.5);
       indicator.style.top   = `${Math.min(progress - 50, 20)}px`;
-      indicator.textContent = diff >= threshold ? '↑ Suelta para recargar' : '↓ Baja más...';
+      indicator.textContent = diffY >= threshold ? '↑ Suelta para recargar' : '↓ Baja más...';
     }
   }, { passive: true });
 
   document.addEventListener('touchend', (e) => {
     if (!pulling) return;
     pulling = false;
-    const diff = e.changedTouches[0].clientY - startY;
+    const diffY = e.changedTouches[0].clientY - startY;
 
-    if (diff >= threshold && window.scrollY === 0) {
+    if (diffY >= threshold && window.scrollY === 0) {
       indicator.textContent = '🔄 Recargando...';
       indicator.style.top   = '10px';
       setTimeout(() => location.reload(), 500);

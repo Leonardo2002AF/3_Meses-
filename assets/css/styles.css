@@ -1011,3 +1011,10 @@ html {
   display: inline-block;
   margin-right: 2px;
 }
+html {
+  overscroll-behavior-y: contain;
+}
+
+body {
+  overscroll-behavior-y: contain;
+}
