@@ -13,7 +13,6 @@ const PASS_KEY    = 'nuestrosRecuerdos_passwords';
 
 /* ════════════════════
    FIREBASE — contraseñas
-   Lee/escribe en /passwords/{username}
 ════════════════════ */
 function getFirebaseDB() {
   try {
@@ -22,7 +21,6 @@ function getFirebaseDB() {
   } catch(e) { return null; }
 }
 
-/* Obtener contraseña desde Firebase (async) */
 async function getFirebasePassword(username) {
   const db = getFirebaseDB();
   if (!db) return null;
@@ -32,7 +30,6 @@ async function getFirebasePassword(username) {
   } catch(e) { return null; }
 }
 
-/* Guardar contraseña en Firebase */
 async function setFirebasePassword(username, password) {
   const db = getFirebaseDB();
   if (!db) return false;
@@ -43,7 +40,7 @@ async function setFirebasePassword(username, password) {
 }
 
 /* ════════════════════
-   VERIFICAR SESIÓN
+   SESIÓN
 ════════════════════ */
 function getSession() {
   try {
@@ -69,8 +66,6 @@ function clearSession() {
 
 /* ════════════════════
    LOGIN
-   1. Busca contraseña en Firebase
-   2. Si no hay, usa la del código
 ════════════════════ */
 async function attemptLogin(username, password) {
   const user = USERS.find(
@@ -78,7 +73,6 @@ async function attemptLogin(username, password) {
   );
   if (!user) return { ok: false };
 
-  // Firebase primero, código como respaldo
   const firebasePass = await getFirebasePassword(user.username);
   const correctPass  = firebasePass || user.password;
 
@@ -102,6 +96,10 @@ function logout() {
   if (uploadBtn) uploadBtn.style.display = 'none';
   const memoryBanner = document.querySelector('.memory-banner');
   if (memoryBanner) memoryBanner.style.display = 'none';
+
+  // Quitar botón ruleta
+  const ruletaBtn = document.getElementById('ruleta-nav-btn');
+  if (ruletaBtn) ruletaBtn.remove();
 
   showLoginScreen();
 }
@@ -164,12 +162,23 @@ function applySession(session) {
   }
 
   setTimeout(() => {
-    if (typeof updateCounter     === 'function') updateCounter();
+    if (typeof updateCounter === 'function') updateCounter();
   }, 100);
-  if (typeof renderTop10         === 'function') renderTop10();
+  if (typeof renderTop10 === 'function') renderTop10();
   setTimeout(() => {
     if (typeof initNotifications === 'function') initNotifications();
   }, 300);
+
+  // ★ Actualizar botón ruleta tras aplicar sesión
+  if (session && !isGuest) {
+    setTimeout(() => {
+      if (typeof actualizarBotonRuleta === 'function') actualizarBotonRuleta();
+    }, 800);
+  } else {
+    // Quitar botón si es invitado o no hay sesión
+    const ruletaBtn = document.getElementById('ruleta-nav-btn');
+    if (ruletaBtn) ruletaBtn.remove();
+  }
 }
 
 /* ════════════════════
@@ -271,8 +280,7 @@ function enterGuestMode() {
 }
 
 /* ════════════════════
-   MANEJAR SUBMIT DEL FORM
-   Ahora es async por Firebase
+   SUBMIT LOGIN
 ════════════════════ */
 async function handleLoginSubmit() {
   const username = document.getElementById('login-input-user').value;
@@ -334,7 +342,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 /* ════════════════════
    CAMBIO DE CONTRASEÑA
-   Guarda en Firebase + localStorage como respaldo
 ════════════════════ */
 async function changePassword(newPassword, confirmPassword) {
   const session = getSession();
@@ -345,21 +352,17 @@ async function changePassword(newPassword, confirmPassword) {
   if (newPassword !== confirmPassword)
     return { ok: false, msg: 'Las contraseñas no coinciden.' };
 
-  // 1. Guardar en Firebase (todos los dispositivos)
   const savedFirebase = await setFirebasePassword(session.username, newPassword);
 
-  // 2. Guardar en localStorage como respaldo offline
   try {
     const saved = JSON.parse(localStorage.getItem(PASS_KEY) || '{}');
     saved[session.username] = newPassword;
     localStorage.setItem(PASS_KEY, JSON.stringify(saved));
   } catch(e) {}
 
-  if (savedFirebase) {
-    return { ok: true };
-  } else {
-    return { ok: true, warn: 'Sin conexión — guardado localmente. Se sincronizará al reconectarte.' };
-  }
+  return savedFirebase
+    ? { ok: true }
+    : { ok: true, warn: 'Sin conexión — guardado localmente. Se sincronizará al reconectarte.' };
 }
 
 function openChangePasswordModal() {

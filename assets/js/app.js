@@ -5,7 +5,6 @@
 
 /* ════════════════════
    FIREBASE — FAVORITOS
-   Lee/escribe en /favorites/{username}/
 ════════════════════ */
 function getFavDB() {
   try {
@@ -14,7 +13,6 @@ function getFavDB() {
   } catch(e) { return null; }
 }
 
-/* Cargar favoritos desde Firebase */
 async function loadFavoritesFromFirebase(username) {
   const db = getFavDB();
   if (!db) return null;
@@ -22,17 +20,14 @@ async function loadFavoritesFromFirebase(username) {
     const snap = await db.ref(`favorites/${username}`).once('value');
     const data = snap.val();
     if (!data) return [];
-    // Firebase guarda como objeto {key: card} → convertir a array
     return Object.values(data);
   } catch(e) { return null; }
 }
 
-/* Guardar favorito en Firebase */
 async function addFavoriteToFirebase(username, card) {
   const db = getFavDB();
   if (!db) return false;
   try {
-    // Usar URL como clave única (sin caracteres especiales)
     const key = btoa(card.image || card.video || card.title)
       .replace(/[.#$/\[\]]/g, '_').substring(0, 40);
     await db.ref(`favorites/${username}/${key}`).set(card);
@@ -40,7 +35,6 @@ async function addFavoriteToFirebase(username, card) {
   } catch(e) { return false; }
 }
 
-/* Eliminar favorito de Firebase */
 async function removeFavoriteFromFirebase(username, card) {
   const db = getFavDB();
   if (!db) return false;
@@ -52,9 +46,8 @@ async function removeFavoriteFromFirebase(username, card) {
   } catch(e) { return false; }
 }
 
-/* Cache local para no recargar Firebase en cada clic */
-let _favsCache = {};   // { username: [cards] }
-let _favsLoaded = {};  // { username: true }
+let _favsCache  = {};
+let _favsLoaded = {};
 
 async function getFavoritesForUser(username) {
   if (_favsLoaded[username]) return _favsCache[username] || [];
@@ -64,7 +57,6 @@ async function getFavoritesForUser(username) {
     _favsLoaded[username] = true;
     return favs;
   }
-  // Firebase falló → usar localStorage como respaldo
   try {
     return JSON.parse(localStorage.getItem(`favs_${username}`) || '[]');
   } catch(e) { return []; }
@@ -77,13 +69,8 @@ function invalidateFavsCache(username) {
 /* ─── CONTADOR DE DÍAS ─── */
 const STORAGE_KEY = 'nuestrosRecuerdos_startDate';
 
-function getSavedDate() {
-  return localStorage.getItem(STORAGE_KEY) || null;
-}
-
-function saveDate(dateStr) {
-  localStorage.setItem(STORAGE_KEY, dateStr);
-}
+function getSavedDate() { return localStorage.getItem(STORAGE_KEY) || null; }
+function saveDate(dateStr) { localStorage.setItem(STORAGE_KEY, dateStr); }
 
 function calcDiff(dateStr) {
   const start  = new Date(dateStr + 'T00:00:00');
@@ -278,7 +265,6 @@ async function renderTop10() {
   }
   if (section) section.style.display = '';
 
-  // Cargar desde Firebase
   const favs  = await getFavoritesForUser(session.username);
   const top10 = favs.slice(0, 10);
 
@@ -394,11 +380,8 @@ async function openModal(card) {
   if (favBtn) {
     if (!isGuest && username) {
       favBtn.style.display = '';
-
-      // Verificar si ya es favorito en Firebase
       const favs  = await getFavoritesForUser(username);
       const isFav = favs.some(f => (f.image || f.video) === (card.image || card.video));
-
       favBtn.textContent      = isFav ? '💖 En favoritos' : '♥ Me Encanta';
       favBtn.style.background = isFav ? '#c0396e' : '';
       favBtn.onclick          = () => toggleFavorite(card, favBtn);
@@ -406,26 +389,26 @@ async function openModal(card) {
       favBtn.style.display = 'none';
     }
   }
-  // Botón editar
-const editBtn = document.getElementById('modal-edit-btn');
-if (editBtn) {
-  editBtn.style.display = '';
-  editBtn.onclick = () => openEditModal(card);
-}
 
-  const overlay = document.getElementById('modal');
-  // ── Inyectar sección de comentarios ──
+  const editBtn = document.getElementById('modal-edit-btn');
+  if (editBtn) {
+    editBtn.style.display = '';
+    editBtn.onclick = () => openEditModal(card);
+  }
+
   const commentsContainer = document.getElementById('modal-comments-container');
   if (commentsContainer && typeof renderCommentsSection === 'function') {
     commentsContainer.innerHTML = '';
     renderCommentsSection(card, commentsContainer);
   }
+
+  const overlay = document.getElementById('modal');
   if (overlay) overlay.classList.add('active');
   document.body.style.overflow = 'hidden';
 }
 
 function closeModal() {
-  window._activeCommentsRid = null; // ← agregar esta línea
+  window._activeCommentsRid = null;
   const overlay = document.getElementById('modal');
   if (overlay) overlay.classList.remove('active');
   document.body.style.overflow = '';
@@ -436,7 +419,6 @@ function closeModal() {
 ════════════════════ */
 async function toggleFavorite(card, btn) {
   if (typeof getSession !== 'function') return;
-
   const session = getSession();
   if (!session || session.guest) return;
 
@@ -445,32 +427,22 @@ async function toggleFavorite(card, btn) {
   const idx      = favs.findIndex(f => (f.image || f.video) === (card.image || card.video));
 
   if (idx === -1) {
-    // ── Agregar ──
     favs.push(card);
     _favsCache[username] = favs;
-
     btn.textContent      = '💖 En favoritos';
     btn.style.background = '#c0396e';
     spawnHearts(null, 6);
-
     await addFavoriteToFirebase(username, card);
-    // Respaldo localStorage
     try { localStorage.setItem(`favs_${username}`, JSON.stringify(favs)); } catch(e) {}
-
   } else {
-    // ── Quitar ──
     favs.splice(idx, 1);
     _favsCache[username] = favs;
-
     btn.textContent      = '♥ Me Encanta';
     btn.style.background = '';
-
     await removeFavoriteFromFirebase(username, card);
-    // Respaldo localStorage
     try { localStorage.setItem(`favs_${username}`, JSON.stringify(favs)); } catch(e) {}
   }
 
-  // Refrescar Top 10
   renderTop10();
 }
 
@@ -490,8 +462,7 @@ async function openFavoritesModal() {
   const modal = document.getElementById('favs-modal');
   if (!grid || !empty || !modal) return;
 
-  // Mostrar loading mientras carga Firebase
-  grid.innerHTML    = `<div style="padding:2rem;text-align:center;color:#555;
+  grid.innerHTML = `<div style="padding:2rem;text-align:center;color:#555;
     font-family:'Lato',sans-serif;font-size:0.85rem;grid-column:1/-1;">
     Cargando favoritos... ⏳</div>`;
   grid.style.display  = 'grid';
@@ -499,7 +470,6 @@ async function openFavoritesModal() {
   modal.classList.add('open');
   document.body.style.overflow = 'hidden';
 
-  // Invalidar cache para obtener datos frescos de Firebase
   invalidateFavsCache(session.username);
   const favs = await getFavoritesForUser(session.username);
 
@@ -595,9 +565,7 @@ function spawnHearts(anchor, count = 6) {
   }
 }
 
-function addHeart(e) {
-  spawnHearts(e.currentTarget, 7);
-}
+function addHeart(e) { spawnHearts(e.currentTarget, 7); }
 
 /* ─── NAVBAR SCROLL ─── */
 function initNavbar() {
@@ -623,8 +591,14 @@ function initApp() {
   updateCounter();
   initNavbar();
   initOutsideClose();
-  actualizarBotonRuleta();
-  if (typeof actualizarBotonRuleta === 'function') actualizarBotonRuleta();
+  // NO llamar actualizarBotonRuleta aquí — se llama desde auth.js tras el login
+}
+
+/* ─── Llamar ruleta cuando el usuario ya está autenticado ─── */
+function onUserLoggedIn() {
+  if (typeof actualizarBotonRuleta === 'function') {
+    actualizarBotonRuleta();
+  }
 }
 
 if (document.readyState === 'loading') {
