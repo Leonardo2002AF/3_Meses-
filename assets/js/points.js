@@ -49,20 +49,28 @@ async function setUserPoints(username, points) {
 
 /* ─── Calificar recuerdo con IA ─── */
 async function calificarRecuerdoConIA(titulo, descripcion) {
-  const prompt = `Eres un evaluador romántico. Califica este recuerdo de pareja del 1 al 5 según qué tan detalloso, cariñoso y especial es.
+  const prompt = `Eres un evaluador muy generoso y romántico de recuerdos de pareja. 
+Tu trabajo es MOTIVAR a la pareja a documentar sus momentos, así que siempre calificas con entusiasmo.
 
+Analiza este recuerdo:
 Título: "${titulo}"
-Descripción: "${descripcion}"
+Descripción: "${descripcion || '(sin descripción)'}"
 
-Criterios:
-- 1 punto: muy básico, sin detalle ni cariño
-- 2 puntos: algo de detalle pero poco cariño
-- 3 puntos: buen detalle o buen cariño
-- 4 puntos: muy detalloso y cariñoso
-- 5 puntos: extraordinariamente especial, lleno de amor y detalle
+Reglas de calificación:
+- Si solo hay título corto (1-3 palabras) y sin descripción → 2 puntos
+- Si el título tiene más de 3 palabras O hay alguna descripción → 3 puntos  
+- Si el título es descriptivo Y hay descripción corta → 4 puntos
+- Si hay descripción emotiva, detallada o con sentimientos → 5 puntos
+- NUNCA des 1 punto a menos que el título sea solo una letra o número
 
-Responde SOLO con un JSON así (sin texto extra):
-{"puntos": 3, "mensaje": "Un recuerdo lindo que muestra cariño 💕"}`;
+Ejemplos:
+"foto" sin descripción → 2 puntos
+"Primer beso" sin descripción → 3 puntos  
+"Primer beso en la noche de gala" sin descripción → 4 puntos
+"Primer beso" + "Estaba tan nervioso, fue mágico" → 5 puntos
+
+Responde SOLO con este JSON exacto (sin texto extra, sin markdown):
+{"puntos": 4, "mensaje": "¡Qué bonito recuerdo! 💕"}`;
 
   try {
     const res = await fetch(CLAUDE_API_URL, {
@@ -75,18 +83,27 @@ Responde SOLO con un JSON así (sin texto extra):
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 150,
+        max_tokens: 100,
         messages: [{ role: 'user', content: prompt }],
       }),
     });
 
-    const data = await res.json();
-    const text = data.content?.[0]?.text || '{"puntos":1,"mensaje":"Recuerdo guardado 💖"}';
+    const data  = await res.json();
+    const text  = data.content?.[0]?.text || '';
     const clean = text.replace(/```json|```/g, '').trim();
-    return JSON.parse(clean);
+    const json  = JSON.parse(clean);
+
+    // Garantizar mínimo 2 puntos siempre
+    json.puntos = Math.max(2, Math.min(5, parseInt(json.puntos) || 2));
+    return json;
+
   } catch(e) {
     console.warn('Error IA:', e);
-    return { puntos: 1, mensaje: 'Recuerdo guardado 💖' };
+    // Fallback inteligente sin IA
+    const tituloLen = (titulo || '').trim().split(' ').length;
+    const tieneDesc = (descripcion || '').trim().length > 10;
+    const puntos = tieneDesc ? (tituloLen > 3 ? 5 : 4) : (tituloLen > 3 ? 4 : 3);
+    return { puntos, mensaje: '¡Recuerdo guardado con amor! 💖' };
   }
 }
 
