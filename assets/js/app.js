@@ -367,7 +367,7 @@ async function openModal(card) {
         const vid = document.getElementById('modal-video-player');
         if (!vid) return;
         vid.play();
-        if (vid.requestFullscreen)           vid.requestFullscreen();
+        if (vid.requestFullscreen)            vid.requestFullscreen();
         else if (vid.webkitRequestFullscreen) vid.webkitRequestFullscreen();
         else if (vid.webkitEnterFullscreen)   vid.webkitEnterFullscreen();
       };
@@ -583,6 +583,64 @@ function initOutsideClose() {
   if (dateMod) dateMod.addEventListener('click', e => { if (e.target === dateMod) closeDateModal(); });
 }
 
+/* ─── PULL TO REFRESH ─── */
+function initPullToRefresh() {
+  let startY    = 0;
+  let pulling   = false;
+  const threshold = 80;
+
+  const indicator = document.createElement('div');
+  indicator.id = 'ptr-indicator';
+  indicator.style.cssText = `
+    position: fixed;
+    top: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #c0392b;
+    color: white;
+    border-radius: 50px;
+    padding: 0.5rem 1.2rem;
+    font-size: 0.85rem;
+    font-family: 'Lato', sans-serif;
+    z-index: 9999;
+    transition: top 0.2s ease;
+    pointer-events: none;
+  `;
+  indicator.textContent = '↓ Baja más...';
+  document.body.appendChild(indicator);
+
+  document.addEventListener('touchstart', (e) => {
+    if (window.scrollY === 0) {
+      startY  = e.touches[0].clientY;
+      pulling = true;
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!pulling) return;
+    const diff = e.touches[0].clientY - startY;
+    if (diff > 10 && window.scrollY === 0) {
+      const progress = Math.min(diff, threshold * 1.5);
+      indicator.style.top   = `${Math.min(progress - 50, 20)}px`;
+      indicator.textContent = diff >= threshold ? '↑ Suelta para recargar' : '↓ Baja más...';
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchend', (e) => {
+    if (!pulling) return;
+    pulling = false;
+    const diff = e.changedTouches[0].clientY - startY;
+
+    if (diff >= threshold && window.scrollY === 0) {
+      indicator.textContent = '🔄 Recargando...';
+      indicator.style.top   = '10px';
+      setTimeout(() => location.reload(), 500);
+    } else {
+      indicator.style.top = '-60px';
+    }
+  }, { passive: true });
+}
+
 /* ─── INIT ─── */
 function initApp() {
   renderHero();
@@ -591,14 +649,12 @@ function initApp() {
   updateCounter();
   initNavbar();
   initOutsideClose();
-  // NO llamar actualizarBotonRuleta aquí — se llama desde auth.js tras el login
+  initPullToRefresh();
 }
 
 /* ─── Llamar ruleta cuando el usuario ya está autenticado ─── */
 function onUserLoggedIn() {
-  if (typeof actualizarBotonRuleta === 'function') {
-    actualizarBotonRuleta();
-  }
+  if (typeof actualizarBotonRuleta === 'function') actualizarBotonRuleta();
 }
 
 if (document.readyState === 'loading') {

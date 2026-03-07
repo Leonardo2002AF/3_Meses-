@@ -369,4 +369,5 @@ async function actualizarBotonRuleta() {
     console.warn('Error ruleta btn:', e);
     setTimeout(actualizarBotonRuleta, 1000);
   }
+  
 }
