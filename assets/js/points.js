@@ -47,6 +47,52 @@ async function setUserPoints(username, points) {
   } catch(e) { console.warn('Error guardando puntos:', e); }
 }
 
+/* ─── Alternar estado cumplido/pendiente ─── */
+async function marcarPremiocumplido(username, key) {
+  try {
+    const snap     = await firebase.database().ref(`historial_ruleta/${username}/${key}`).once('value');
+    const actual   = snap.val();
+    const nuevoVal = !actual?.cumplido;
+
+    await firebase.database().ref(`historial_ruleta/${username}/${key}`).update({ cumplido: nuevoVal });
+
+    // Actualizar UI sin recargar todo
+    const btn = document.querySelector(`[data-key="${key}"]`);
+    if (btn) {
+      btn.textContent = nuevoVal ? '✅ Cumplido' : '⏳ Pendiente';
+      btn.className   = `historial-estado ${nuevoVal ? 'cumplido' : 'pendiente'}`;
+    }
+  } catch(e) {
+    console.warn('Error alternando estado:', e);
+  }
+}
+
+/* ─── Renderizar historial ─── */
+function renderHistorial(historialRaw, username) {
+  const historial = Object.entries(historialRaw || {})
+    .map(([key, val]) => ({ key, ...val }))
+    .sort((a, b) => b.ts - a.ts);
+
+  if (historial.length === 0) {
+    return '<div class="historial-empty">Aún no has girado la ruleta 🎡</div>';
+  }
+
+  return historial.map(h => `
+    <div class="historial-item">
+      <span class="historial-emoji">${h.emoji}</span>
+      <div class="historial-info">
+        <div class="historial-texto">${h.texto}</div>
+        <div class="historial-fecha">${new Date(h.ts).toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'})}</div>
+      </div>
+      <span class="historial-estado ${h.cumplido ? 'cumplido' : 'pendiente'}"
+        data-key="${h.key}" style="cursor:pointer"
+        title="${h.cumplido ? 'Toca para marcar pendiente' : 'Toca para marcar cumplido'}"
+        onclick="marcarPremiocumplido('${username}', '${h.key}')">
+        ${h.cumplido ? '✅ Cumplido' : '⏳ Pendiente'}
+      </span>
+    </div>`).join('');
+}
+
 /* ─── Calificar recuerdo con IA ─── */
 async function calificarRecuerdoConIA(titulo, descripcion) {
   const prompt = `Eres un evaluador muy generoso y romántico de recuerdos de pareja. 
@@ -93,13 +139,11 @@ Responde SOLO con este JSON exacto (sin texto extra, sin markdown):
     const clean = text.replace(/```json|```/g, '').trim();
     const json  = JSON.parse(clean);
 
-    // Garantizar mínimo 2 puntos siempre
     json.puntos = Math.max(2, Math.min(5, parseInt(json.puntos) || 2));
     return json;
 
   } catch(e) {
     console.warn('Error IA:', e);
-    // Fallback inteligente sin IA
     const tituloLen = (titulo || '').trim().split(' ').length;
     const tieneDesc = (descripcion || '').trim().length > 10;
     const puntos = tieneDesc ? (tituloLen > 3 ? 5 : 4) : (tituloLen > 3 ? 4 : 3);
@@ -147,7 +191,6 @@ async function abrirRuleta() {
   const username = session?.username;
   if (!username) return;
 
-  // Leer puntos e historial frescos de Firebase
   const [snapPuntos, histSnap] = await Promise.all([
     firebase.database().ref(`puntos/${username}`).once('value'),
     firebase.database().ref(`historial_ruleta/${username}`).once('value'),
@@ -155,7 +198,6 @@ async function abrirRuleta() {
 
   const puntos       = snapPuntos.val() || 0;
   const historialRaw = histSnap.val() || {};
-  const historial    = Object.values(historialRaw).sort((a, b) => b.ts - a.ts);
 
   const overlay = document.createElement('div');
   overlay.id = 'ruleta-overlay';
@@ -188,20 +230,6 @@ async function abrirRuleta() {
           font-size="18" font-family="sans-serif">${premio.emoji}</text>
       </g>`;
   });
-
-  const historialHTML = historial.length === 0
-    ? '<div class="historial-empty">Aún no has girado la ruleta 🎡</div>'
-    : historial.map(h => `
-        <div class="historial-item">
-          <span class="historial-emoji">${h.emoji}</span>
-          <div class="historial-info">
-            <div class="historial-texto">${h.texto}</div>
-            <div class="historial-fecha">${new Date(h.ts).toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'})}</div>
-          </div>
-          <span class="historial-estado ${h.cumplido ? 'cumplido' : 'pendiente'}">
-            ${h.cumplido ? '✅ Cumplido' : '⏳ Pendiente'}
-          </span>
-        </div>`).join('');
 
   const puedeGirar   = puntos >= POINTS_THRESHOLD;
   const btnGirarHTML = puedeGirar
@@ -239,7 +267,9 @@ async function abrirRuleta() {
       </div>
       <div class="historial-section">
         <div class="historial-title">🏆 Premios ganados</div>
-        <div class="historial-list" id="historial-list">${historialHTML}</div>
+        <div class="historial-list" id="historial-list">
+          ${renderHistorial(historialRaw, username)}
+        </div>
       </div>
     </div>
   `;
@@ -252,7 +282,6 @@ let _ruletaGirando = false;
 async function girarRuleta(puntosActuales, username) {
   if (_ruletaGirando) return;
 
-  // Verificar puntos frescos antes de girar
   const snapVerify   = await firebase.database().ref(`puntos/${username}`).once('value');
   const puntosReales = snapVerify.val() || 0;
   if (puntosReales < POINTS_THRESHOLD) {
@@ -302,24 +331,11 @@ async function girarRuleta(puntosActuales, username) {
     const display = document.getElementById('ruleta-puntos-display');
     if (display) display.textContent = puntosNuevos;
 
-    // Recargar historial
+    // Recargar historial con función centralizada
     const histSnap     = await firebase.database().ref(`historial_ruleta/${username}`).once('value');
     const historialRaw = histSnap.val() || {};
-    const historial    = Object.values(historialRaw).sort((a, b) => b.ts - a.ts);
     const listEl       = document.getElementById('historial-list');
-    if (listEl) {
-      listEl.innerHTML = historial.map(h => `
-        <div class="historial-item">
-          <span class="historial-emoji">${h.emoji}</span>
-          <div class="historial-info">
-            <div class="historial-texto">${h.texto}</div>
-            <div class="historial-fecha">${new Date(h.ts).toLocaleDateString('es-ES',{day:'numeric',month:'short',year:'numeric'})}</div>
-          </div>
-          <span class="historial-estado ${h.cumplido ? 'cumplido' : 'pendiente'}">
-            ${h.cumplido ? '✅ Cumplido' : '⏳ Pendiente'}
-          </span>
-        </div>`).join('');
-    }
+    if (listEl) listEl.innerHTML = renderHistorial(historialRaw, username);
 
     if (btn) {
       if (puntosNuevos >= POINTS_THRESHOLD) {
@@ -337,7 +353,6 @@ async function girarRuleta(puntosActuales, username) {
 
 /* ─── Botón ruleta en navbar ─── */
 async function actualizarBotonRuleta() {
-  // Esperar a que Firebase esté listo
   if (!firebase.apps || !firebase.apps.length) {
     setTimeout(actualizarBotonRuleta, 500);
     return;
@@ -369,5 +384,4 @@ async function actualizarBotonRuleta() {
     console.warn('Error ruleta btn:', e);
     setTimeout(actualizarBotonRuleta, 1000);
   }
-  
 }

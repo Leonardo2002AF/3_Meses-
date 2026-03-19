@@ -2,7 +2,6 @@
    NUESTROS RECUERDOS — Notificaciones Firebase
    ══════════════════════════════════════════ */
 
-/* ─── Configuración Firebase ─── */
 const firebaseConfig = {
   apiKey:            "AIzaSyARvM4FKjpchxUJVDH2q3wwlSrihBrYHiA",
   authDomain:        "nuestros-recuerdos-f17cf.firebaseapp.com",
@@ -13,7 +12,6 @@ const firebaseConfig = {
   appId:             "1:451853471218:web:620c8ed5e3734e35b9ef6b"
 };
 
-/* ─── Init Firebase (usando CDN compat) ─── */
 let _db = null;
 
 function getDB() {
@@ -29,7 +27,6 @@ function getDB() {
 
 /* ════════════════════
    GUARDAR NOTIFICACIÓN
-   (llamar al subir un recuerdo)
 ════════════════════ */
 function saveNotification(card, uploaderUsername) {
   const db = getDB();
@@ -52,7 +49,7 @@ function saveNotification(card, uploaderUsername) {
     uploader: uploaderUsername,
     fecha:    card.fecha || '',
     ts:       Date.now(),
-    readBy:   { [uploaderUsername]: true }, // quien subió ya la leyó
+    readBy:   { [uploaderUsername]: true },
   };
 
   db.ref('notifications').push(notif)
@@ -74,14 +71,12 @@ function markAllRead(username) {
         updates[`notifications/${child.key}/readBy/${username}`] = true;
       }
     });
-    if (Object.keys(updates).length > 0) {
-      db.ref().update(updates);
-    }
+    if (Object.keys(updates).length > 0) db.ref().update(updates);
   });
 }
 
 /* ════════════════════
-   ACTUALIZAR BADGE CAMPANA
+   BADGE CAMPANA
 ════════════════════ */
 function updateBellBadge(unreadCount) {
   const bell = document.querySelector('.nav-icon[title="Notificaciones"]');
@@ -189,7 +184,7 @@ function showNotifPopup(notif) {
       cursor:pointer;font-size:0.8rem;padding:2px 5px;border-radius:4px;">✕</button>
   `;
 
-  document.getElementById && popup.querySelector('#notif-popup-close')?.addEventListener('click', (e) => {
+  popup.querySelector('#notif-popup-close')?.addEventListener('click', (e) => {
     e.stopPropagation();
     popup.remove();
   });
@@ -201,7 +196,6 @@ function showNotifPopup(notif) {
 
   document.body.appendChild(popup);
 
-  // Auto-cerrar en 6 segundos
   setTimeout(() => {
     if (popup.parentNode) {
       popup.style.animation = 'notifSlideOut 0.3s ease forwards';
@@ -212,6 +206,8 @@ function showNotifPopup(notif) {
 
 /* ════════════════════
    PANEL DE NOTIFICACIONES
+   — Muestra TODAS las notificaciones siempre
+   — Solo marca leídas al presionar "Marcar leídas"
 ════════════════════ */
 function openNotifPanel() {
   const existing = document.getElementById('notif-panel');
@@ -244,7 +240,8 @@ function openNotifPanel() {
 
   panel.innerHTML = `
     <div style="padding:1rem 1.2rem 0.8rem;border-bottom:1px solid #222;
-      display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#161616;z-index:1;">
+      display:flex;align-items:center;justify-content:space-between;
+      position:sticky;top:0;background:#161616;z-index:1;">
       <span style="font-family:'Playfair Display',serif;font-size:1rem;color:white;">🔔 Notificaciones</span>
       <span id="notif-mark-read" style="font-size:0.72rem;color:#e50914;cursor:pointer;font-weight:700;">
         Marcar leídas
@@ -257,10 +254,10 @@ function openNotifPanel() {
 
   document.body.appendChild(panel);
 
-  // Cargar notificaciones desde Firebase
+  // ★ Cargar TODAS las notificaciones — no solo las no leídas
   if (db) {
-    db.ref('notifications').orderByChild('ts').limitToLast(20).once('value', snap => {
-      const list    = document.getElementById('notif-panel-list');
+    db.ref('notifications').orderByChild('ts').limitToLast(30).once('value', snap => {
+      const list = document.getElementById('notif-panel-list');
       if (!list) return;
 
       const notifs = [];
@@ -273,11 +270,11 @@ function openNotifPanel() {
       }
 
       list.innerHTML = notifs.map(n => {
-        const isUnread = !n.readBy || !n.readBy[session.username];
-        const timeAgo  = formatTimeAgo(n.ts);
+        const isUnread  = !n.readBy || !n.readBy[session.username];
+        const timeAgo   = formatTimeAgo(n.ts);
         const thumbHTML = n.thumb
           ? `<img src="${n.thumb}" style="width:44px;height:44px;object-fit:cover;border-radius:6px;flex-shrink:0;"
-               onerror="this.style.background='${n.gradient}';this.style.display='block'"/>`
+               onerror="this.style.display='none'"/>`
           : `<div style="width:44px;height:44px;border-radius:6px;flex-shrink:0;
                background:${n.gradient};display:flex;align-items:center;
                justify-content:center;font-size:1.3rem;">${n.emoji}</div>`;
@@ -288,31 +285,29 @@ function openNotifPanel() {
             background:${isUnread ? 'rgba(229,9,20,0.04)' : 'transparent'};">
             ${thumbHTML}
             <div style="flex:1;min-width:0;">
-              <div style="font-size:0.83rem;color:${isUnread ? 'white' : '#aaa'};
+              <div style="font-size:0.83rem;color:${isUnread ? 'white' : '#888'};
                 font-weight:${isUnread ? '700' : '400'};
                 white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n.title}</div>
               <div style="font-size:0.7rem;color:#555;margin-top:0.15rem;">
                 ${n.uploader} · ${timeAgo}
               </div>
             </div>
-            ${isUnread ? '<div style="width:7px;height:7px;border-radius:50%;background:#e50914;flex-shrink:0;"></div>' : ''}
+            ${isUnread
+              ? '<div style="width:7px;height:7px;border-radius:50%;background:#e50914;flex-shrink:0;"></div>'
+              : '<div style="width:7px;height:7px;flex-shrink:0;"></div>'
+            }
           </div>`;
       }).join('');
     });
   }
 
-  // Marcar leídas al abrir
-  markAllRead(session.username);
-  setTimeout(() => updateBellBadge(0), 300);
-
-  // Botón marcar leídas
+  // ★ NO marcar leídas al abrir — solo al presionar el botón
   panel.querySelector('#notif-mark-read')?.addEventListener('click', () => {
     markAllRead(session.username);
     updateBellBadge(0);
     panel.remove();
   });
 
-  // Cerrar al hacer clic fuera
   setTimeout(() => {
     document.addEventListener('click', (e) => {
       if (!panel.contains(e.target) && !bell?.contains(e.target)) panel.remove();
@@ -350,19 +345,14 @@ function initNotifications() {
     bell.onclick = (e) => { e.stopPropagation(); openNotifPanel(); };
   }
 
-  // Escuchar en tiempo real nuevas notificaciones
+  // Escuchar nuevas notificaciones en tiempo real
   db.ref('notifications').orderByChild('ts').startAt(Date.now() - 5000)
     .on('child_added', snap => {
       const n = snap.val();
       if (!n) return;
-
-      // No notificar al mismo usuario que subió
       if (n.uploader === session.username) return;
-
-      // Verificar si ya fue leída
       if (n.readBy && n.readBy[session.username]) return;
 
-      // Actualizar badge
       db.ref('notifications').once('value', allSnap => {
         let unread = 0;
         allSnap.forEach(child => {
@@ -372,11 +362,10 @@ function initNotifications() {
         updateBellBadge(unread);
       });
 
-      // Mostrar pop-up
       showNotifPopup(n);
     });
 
-  // Badge inicial con notifs no leídas
+  // Badge inicial
   db.ref('notifications').once('value', snap => {
     let unread = 0;
     snap.forEach(child => {
