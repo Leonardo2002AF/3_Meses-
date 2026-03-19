@@ -256,7 +256,7 @@ function openNotifPanel() {
 
   // ★ Cargar TODAS las notificaciones — no solo las no leídas
   if (db) {
-    db.ref('notifications').orderByChild('ts').limitToLast(30).once('value', snap => {
+   db.ref('notifications').orderByChild('ts').limitToLast(50).once('value', snap => {
       const list = document.getElementById('notif-panel-list');
       if (!list) return;
 
