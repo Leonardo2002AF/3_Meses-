@@ -114,6 +114,39 @@ function updateBellBadge(unreadCount) {
 }
 
 /* ════════════════════
+   RENDER ITEM NOTIFICACIÓN
+════════════════════ */
+function renderNotifItem(n, username) {
+  const isUnread  = !n.readBy || !n.readBy[username];
+  const timeAgo   = formatTimeAgo(n.ts);
+  const thumbHTML = n.thumb
+    ? `<img src="${n.thumb}" style="width:44px;height:44px;object-fit:cover;border-radius:6px;flex-shrink:0;"
+         onerror="this.style.display='none'"/>`
+    : `<div style="width:44px;height:44px;border-radius:6px;flex-shrink:0;
+         background:${n.gradient};display:flex;align-items:center;
+         justify-content:center;font-size:1.3rem;">${n.emoji}</div>`;
+
+  return `
+    <div style="display:flex;align-items:center;gap:0.8rem;padding:0.8rem 1.2rem;
+      border-bottom:1px solid #1a1a1a;
+      background:${isUnread ? 'rgba(229,9,20,0.06)' : 'transparent'};">
+      ${thumbHTML}
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:0.83rem;color:${isUnread ? 'white' : '#888'};
+          font-weight:${isUnread ? '700' : '400'};
+          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n.title}</div>
+        <div style="font-size:0.7rem;color:#555;margin-top:0.15rem;">
+          ${n.uploader} · ${timeAgo}
+        </div>
+      </div>
+      ${isUnread
+        ? '<div style="width:7px;height:7px;border-radius:50%;background:#e50914;flex-shrink:0;"></div>'
+        : '<div style="width:7px;height:7px;flex-shrink:0;"></div>'
+      }
+    </div>`;
+}
+
+/* ════════════════════
    POP-UP FLOTANTE
 ════════════════════ */
 function showNotifPopup(notif) {
@@ -206,7 +239,7 @@ function showNotifPopup(notif) {
 
 /* ════════════════════
    PANEL DE NOTIFICACIONES
-   — Muestra TODAS las notificaciones siempre
+   — No leídas primero, luego leídas con "Ver más"
    — Solo marca leídas al presionar "Marcar leídas"
 ════════════════════ */
 function openNotifPanel() {
@@ -230,7 +263,7 @@ function openNotifPanel() {
     border: 1px solid #2a2a2a;
     border-radius: 12px;
     width: 300px;
-    max-height: 420px;
+    max-height: 520px;
     overflow-y: auto;
     z-index: 9000;
     box-shadow: 0 16px 48px rgba(0,0,0,0.8);
@@ -254,54 +287,73 @@ function openNotifPanel() {
 
   document.body.appendChild(panel);
 
-  // ★ Cargar TODAS las notificaciones — no solo las no leídas
   if (db) {
-   db.ref('notifications').orderByChild('ts').once('value', snap => {
+    db.ref('notifications').orderByChild('ts').once('value', snap => {
       const list = document.getElementById('notif-panel-list');
       if (!list) return;
 
-      const notifs = [];
-      snap.forEach(child => notifs.unshift({ key: child.key, ...child.val() }));
+      // Separar no leídas y leídas
+      const noLeidas = [];
+      const leidas   = [];
 
-      if (notifs.length === 0) {
+      snap.forEach(child => {
+        const n = { key: child.key, ...child.val() };
+        const esNoLeida = !n.readBy || !n.readBy[session.username];
+        if (esNoLeida) noLeidas.unshift(n);
+        else leidas.unshift(n);
+      });
+
+      // Ordenar cada grupo por fecha descendente
+      noLeidas.sort((a, b) => b.ts - a.ts);
+      leidas.sort((a, b) => b.ts - a.ts);
+
+      if (noLeidas.length === 0 && leidas.length === 0) {
         list.innerHTML = `<div style="padding:2rem;text-align:center;color:#444;font-size:0.85rem;">
           Sin notificaciones aún 🌙</div>`;
         return;
       }
 
-      list.innerHTML = notifs.map(n => {
-        const isUnread  = !n.readBy || !n.readBy[session.username];
-        const timeAgo   = formatTimeAgo(n.ts);
-        const thumbHTML = n.thumb
-          ? `<img src="${n.thumb}" style="width:44px;height:44px;object-fit:cover;border-radius:6px;flex-shrink:0;"
-               onerror="this.style.display='none'"/>`
-          : `<div style="width:44px;height:44px;border-radius:6px;flex-shrink:0;
-               background:${n.gradient};display:flex;align-items:center;
-               justify-content:center;font-size:1.3rem;">${n.emoji}</div>`;
+      let html = '';
 
-        return `
-          <div style="display:flex;align-items:center;gap:0.8rem;padding:0.8rem 1.2rem;
-            border-bottom:1px solid #1a1a1a;
-            background:${isUnread ? 'rgba(229,9,20,0.04)' : 'transparent'};">
-            ${thumbHTML}
-            <div style="flex:1;min-width:0;">
-              <div style="font-size:0.83rem;color:${isUnread ? 'white' : '#888'};
-                font-weight:${isUnread ? '700' : '400'};
-                white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${n.title}</div>
-              <div style="font-size:0.7rem;color:#555;margin-top:0.15rem;">
-                ${n.uploader} · ${timeAgo}
-              </div>
-            </div>
-            ${isUnread
-              ? '<div style="width:7px;height:7px;border-radius:50%;background:#e50914;flex-shrink:0;"></div>'
-              : '<div style="width:7px;height:7px;flex-shrink:0;"></div>'
-            }
+      // ── Sección no leídas ──
+      if (noLeidas.length > 0) {
+        html += `<div style="padding:0.4rem 1.2rem 0.3rem;font-size:0.68rem;
+          color:#e50914;font-weight:700;letter-spacing:1px;text-transform:uppercase;">
+          Nuevas (${noLeidas.length})
+        </div>`;
+        html += noLeidas.map(n => renderNotifItem(n, session.username)).join('');
+      }
+
+      // ── Sección leídas (solo las últimas 10) ──
+      if (leidas.length > 0) {
+        const recientes = leidas.slice(0, 10);
+        html += `<div style="padding:0.6rem 1.2rem 0.3rem;font-size:0.68rem;
+          color:#555;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+          border-top:1px solid #222;margin-top:0.3rem;">
+          Anteriores
+        </div>`;
+        html += recientes.map(n => renderNotifItem(n, session.username)).join('');
+
+        if (leidas.length > 10) {
+          html += `<div style="padding:0.8rem;text-align:center;">
+            <button onclick="expandLeidas()" style="
+              background:none;border:1px solid #333;color:#666;
+              border-radius:6px;padding:0.4rem 1rem;font-size:0.75rem;
+              cursor:pointer;font-family:'Lato',sans-serif;">
+              Ver ${leidas.length - 10} más
+            </button>
           </div>`;
-      }).join('');
+          // Guardar leídas restantes para expandir
+          window._notifsLeidasExtra = leidas.slice(10);
+          window._notifsUsername    = session.username;
+        }
+      }
+
+      list.innerHTML = html;
     });
   }
 
-  // ★ NO marcar leídas al abrir — solo al presionar el botón
+  // Solo marca leídas al presionar el botón
   panel.querySelector('#notif-mark-read')?.addEventListener('click', () => {
     markAllRead(session.username);
     updateBellBadge(0);
@@ -313,6 +365,23 @@ function openNotifPanel() {
       if (!panel.contains(e.target) && !bell?.contains(e.target)) panel.remove();
     }, { once: true });
   }, 50);
+}
+
+/* ─── Expandir leídas antiguas ─── */
+function expandLeidas() {
+  const extra    = window._notifsLeidasExtra || [];
+  const username = window._notifsUsername || '';
+  const list     = document.getElementById('notif-panel-list');
+  if (!list) return;
+
+  // Quitar el botón "Ver más"
+  const btn = list.querySelector('button[onclick="expandLeidas()"]')?.parentElement;
+  if (btn) btn.remove();
+
+  // Agregar el resto
+  const div = document.createElement('div');
+  div.innerHTML = extra.map(n => renderNotifItem(n, username)).join('');
+  list.appendChild(div);
 }
 
 /* ════════════════════
