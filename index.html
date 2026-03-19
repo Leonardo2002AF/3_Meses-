@@ -17,9 +17,8 @@
   <link rel="stylesheet" href="assets/css/comments.css" />
   <link rel="stylesheet" href="assets/css/edit-memory.css" />
   <link rel="stylesheet" href="assets/css/timeline.css" />
-  <link rel="manifest" href="/manifest.json">
   <link rel="stylesheet" href="assets/css/points.css">
-  <link rel="manifest" href="/manifest.json">
+  <link rel="manifest" href="./manifest.json">
   <link rel="apple-touch-icon" href="assets/images/logo.jpeg">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
@@ -247,7 +246,7 @@
         <h2 class="modal-title" id="modal-title">Título</h2>
        <div class="modal-meta">
         <span style="color:#46d369;font-weight:700;">💖 99% Amor</span>
-        <span id="modal-year" style="color:#aaa"></span> <!-- Cambiado de "2025" a un ID -->
+        <span id="modal-year" style="color:#aaa"></span>
         <span style="color:var(--pink)">♥♥♥♥♥</span>
       </div>
         <div class="modal-video-area" id="modal-media">
@@ -335,12 +334,10 @@
             <label class="um-label" for="um-category">Sección</label>
             <select class="um-select" id="um-category"></select>
           </div>
-          <!-- **** NUEVO CAMPO DE FECHA **** -->
           <div class="um-field">
             <label class="um-label" for="um-fecha">¿Cuándo ocurrió?</label>
             <input class="um-input" id="um-fecha" type="date" placeholder="Selecciona una fecha" />
           </div>
-          <!-- ******************************** -->
           <div class="um-nav">
             <button class="btn btn-info" onclick="setUploadStep(1)">← Atrás</button>
             <button class="btn btn-red"  onclick="startUpload()">♥ Subir</button>
