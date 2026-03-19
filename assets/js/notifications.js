@@ -49,6 +49,8 @@ function saveNotification(card, uploaderUsername) {
     uploader: uploaderUsername,
     fecha:    card.fecha || '',
     ts:       Date.now(),
+    image:    card.image || '',
+    video:    card.video || '',
     readBy:   { [uploaderUsername]: true },
   };
 
@@ -72,6 +74,22 @@ function markAllRead(username) {
       }
     });
     if (Object.keys(updates).length > 0) db.ref().update(updates);
+  });
+}
+
+/* ════════════════════
+   CONTAR NO LEÍDAS
+════════════════════ */
+async function contarNoLeidas(username) {
+  return new Promise(resolve => {
+    firebase.database().ref('notifications').once('value', snap => {
+      let count = 0;
+      snap.forEach(child => {
+        const n = child.val();
+        if (!n.readBy || !n.readBy[username]) count++;
+      });
+      resolve(count);
+    });
   });
 }
 
@@ -114,11 +132,65 @@ function updateBellBadge(unreadCount) {
 }
 
 /* ════════════════════
+   ABRIR RECUERDO DESDE NOTIFICACIÓN
+════════════════════ */
+async function abrirRecuerdoDesdeNotif(key, username) {
+  // Cerrar panel
+  const panel = document.getElementById('notif-panel');
+  if (panel) panel.remove();
+
+  // Marcar como leída en Firebase
+  try {
+    await firebase.database()
+      .ref(`notifications/${key}/readBy/${username}`)
+      .set(true);
+    const noLeidas = await contarNoLeidas(username);
+    updateBellBadge(noLeidas);
+  } catch(e) {
+    console.warn('Error marcando leída:', e);
+  }
+
+  // Obtener datos de la notificación
+  const n = window[`notif_${key}`];
+  if (!n) return;
+
+  // Buscar la card en los carruseles por título (coincidencia exacta)
+  let encontrada = false;
+  document.querySelectorAll('.card').forEach(el => {
+    if (encontrada) return;
+    const tituloEl = el.querySelector('.card-title');
+    if (tituloEl && tituloEl.textContent.trim() === n.title.trim()) {
+      encontrada = true;
+      el.click();
+    }
+  });
+
+  // Si no se encontró en carruseles, abrir modal con datos de la notif
+  if (!encontrada && typeof openModal === 'function') {
+    const card = {
+      title:    n.title,
+      emoji:    n.emoji    || '📸',
+      gradient: n.gradient || 'linear-gradient(135deg,#4a0015,#c0396e)',
+      sub:      `Subido por ${n.uploader}`,
+      desc:     `Recuerdo subido por ${n.uploader}`,
+      fecha:    n.fecha    || '',
+      image:    n.image    || '',
+      video:    n.video    || '',
+    };
+    openModal(card);
+  }
+}
+
+/* ════════════════════
    RENDER ITEM NOTIFICACIÓN
 ════════════════════ */
 function renderNotifItem(n, username) {
   const isUnread  = !n.readBy || !n.readBy[username];
   const timeAgo   = formatTimeAgo(n.ts);
+
+  // Guardar datos para acceder al hacer click
+  window[`notif_${n.key}`] = n;
+
   const thumbHTML = n.thumb
     ? `<img src="${n.thumb}" style="width:44px;height:44px;object-fit:cover;border-radius:6px;flex-shrink:0;"
          onerror="this.style.display='none'"/>`
@@ -127,9 +199,12 @@ function renderNotifItem(n, username) {
          justify-content:center;font-size:1.3rem;">${n.emoji}</div>`;
 
   return `
-    <div style="display:flex;align-items:center;gap:0.8rem;padding:0.8rem 1.2rem;
-      border-bottom:1px solid #1a1a1a;
-      background:${isUnread ? 'rgba(229,9,20,0.06)' : 'transparent'};">
+    <div onclick="abrirRecuerdoDesdeNotif('${n.key}', '${username}')"
+      style="display:flex;align-items:center;gap:0.8rem;padding:0.8rem 1.2rem;
+      border-bottom:1px solid #1a1a1a;cursor:pointer;
+      background:${isUnread ? 'rgba(229,9,20,0.06)' : 'transparent'};"
+      onmouseover="this.style.background='rgba(255,255,255,0.04)'"
+      onmouseout="this.style.background='${isUnread ? 'rgba(229,9,20,0.06)' : 'transparent'}'">
       ${thumbHTML}
       <div style="flex:1;min-width:0;">
         <div style="font-size:0.83rem;color:${isUnread ? 'white' : '#888'};
@@ -140,7 +215,7 @@ function renderNotifItem(n, username) {
         </div>
       </div>
       ${isUnread
-        ? '<div style="width:7px;height:7px;border-radius:50%;background:#e50914;flex-shrink:0;"></div>'
+        ? `<div id="dot_${n.key}" style="width:7px;height:7px;border-radius:50%;background:#e50914;flex-shrink:0;"></div>`
         : '<div style="width:7px;height:7px;flex-shrink:0;"></div>'
       }
     </div>`;
@@ -239,8 +314,6 @@ function showNotifPopup(notif) {
 
 /* ════════════════════
    PANEL DE NOTIFICACIONES
-   — No leídas primero, luego leídas con "Ver más"
-   — Solo marca leídas al presionar "Marcar leídas"
 ════════════════════ */
 function openNotifPanel() {
   const existing = document.getElementById('notif-panel');
@@ -292,7 +365,6 @@ function openNotifPanel() {
       const list = document.getElementById('notif-panel-list');
       if (!list) return;
 
-      // Separar no leídas y leídas
       const noLeidas = [];
       const leidas   = [];
 
@@ -303,7 +375,6 @@ function openNotifPanel() {
         else leidas.unshift(n);
       });
 
-      // Ordenar cada grupo por fecha descendente
       noLeidas.sort((a, b) => b.ts - a.ts);
       leidas.sort((a, b) => b.ts - a.ts);
 
@@ -315,7 +386,7 @@ function openNotifPanel() {
 
       let html = '';
 
-      // ── Sección no leídas ──
+      // Sección no leídas
       if (noLeidas.length > 0) {
         html += `<div style="padding:0.4rem 1.2rem 0.3rem;font-size:0.68rem;
           color:#e50914;font-weight:700;letter-spacing:1px;text-transform:uppercase;">
@@ -324,7 +395,7 @@ function openNotifPanel() {
         html += noLeidas.map(n => renderNotifItem(n, session.username)).join('');
       }
 
-      // ── Sección leídas (solo las últimas 10) ──
+      // Sección leídas — solo últimas 10
       if (leidas.length > 0) {
         const recientes = leidas.slice(0, 10);
         html += `<div style="padding:0.6rem 1.2rem 0.3rem;font-size:0.68rem;
@@ -343,7 +414,6 @@ function openNotifPanel() {
               Ver ${leidas.length - 10} más
             </button>
           </div>`;
-          // Guardar leídas restantes para expandir
           window._notifsLeidasExtra = leidas.slice(10);
           window._notifsUsername    = session.username;
         }
@@ -374,11 +444,9 @@ function expandLeidas() {
   const list     = document.getElementById('notif-panel-list');
   if (!list) return;
 
-  // Quitar el botón "Ver más"
   const btn = list.querySelector('button[onclick="expandLeidas()"]')?.parentElement;
   if (btn) btn.remove();
 
-  // Agregar el resto
   const div = document.createElement('div');
   div.innerHTML = extra.map(n => renderNotifItem(n, username)).join('');
   list.appendChild(div);
